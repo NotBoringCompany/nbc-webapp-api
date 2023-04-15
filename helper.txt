@@ -1,0 +1,9 @@
+// CONVERT IDS TO UINT FOR FUNCTION CALLS
+big.NewInt(uint64(i)) where i = a number 
+OR 
+big.NewInt(1) assuming the number is provided
+
+// CONVERT STRING ADDRESS TO ADDRESS (HEX TO ADDRESS)
+common.hexToAddress(addr) where addr = address
+
+

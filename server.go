@@ -18,12 +18,12 @@ func main() {
 	})
 
 	app.Get("/test", func(c *fiber.Ctx) error {
-		holder, err := kos.GetHolders()
+		holderData, err := kos.GetHolderData()
 
 		if err != nil {
 			return c.SendString(err.Error())
 		}
-		return c.SendString(fmt.Sprintf("%d", *holder))
+		return c.SendString(fmt.Sprintf("%v", holderData))
 	})
 
 	app.Listen("localhost:3000")

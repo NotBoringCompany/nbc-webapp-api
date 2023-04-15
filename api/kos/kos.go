@@ -14,7 +14,7 @@ import (
 )
 
 // loads the Key Of Salvation contract (ETH Blockchain)
-func loadKOS() (*bind.BoundContract, error) {
+func loadKOS(caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
 	err := godotenv.Load()
 	if err != nil {
 		return nil, err
@@ -48,6 +48,17 @@ func loadKOS() (*bind.BoundContract, error) {
 	abi, err := abi.JSON(strings.NewReader(kosAbiContent))
 	if err != nil {
 		return nil, err
+	}
+
+	// checks if any of the parameters are empty
+	if caller == nil {
+		caller = client
+	}
+	if transactor == nil {
+		transactor = client
+	}
+	if filterer == nil {
+		filterer = client
 	}
 
 	contract := bind.NewBoundContract(kosAddr, abi, client, client, client)
