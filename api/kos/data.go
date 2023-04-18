@@ -3,20 +3,21 @@ package kos
 import (
 	"encoding/json"
 	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
+	"nbc-backend-api-v2/models"
+	"nbc-backend-api-v2/utils"
 )
 
-// an explicit ownership struct to read the data from `explicitOwnershipsOf`
-type ExplicitOwnership struct {
-	Addr           common.Address `json:"addr"`
-	StartTimestamp uint64         `json:"startTimestamp"`
-	Burned         bool           `json:"burned"`
-	ExtraData      *big.Int       `json:"extraData"`
-}
-
-func GetHolderData() ([]ExplicitOwnership, error) {
-	kos, err := loadKOS(nil, nil, nil)
+func GetExplicitOwnerships() ([]models.ExplicitOwnership, error) {
+	kos, err := utils.LoadContract(
+		"ALCHEMY_ETH_API_KEY",
+		true,
+		"https://eth-mainnet.g.alchemy.com/v2/",
+		"abi/KeyOfSalvation.json",
+		"0x34BFF2Dbf20cF39dB042cb68D42D6d06fdbd85D3",
+		nil,
+		nil,
+		nil,
+	)
 
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func GetHolderData() ([]ExplicitOwnership, error) {
 
 	// the result returned in `rawResult` is an array of unknown interfaces.
 	// upon further inspection, each interface is rather an ExplicitOwnership struct, so we need to convert it in order to be able to loop through each element.
-	var results []ExplicitOwnership
+	var results []models.ExplicitOwnership
 	data, err := json.Marshal(rawResult[0])
 	if err != nil {
 		return nil, err
@@ -49,11 +50,19 @@ func GetHolderData() ([]ExplicitOwnership, error) {
 	}
 
 	// return all the results formatted as an array of ExplicitOwnership structs
-	var formattedResult []ExplicitOwnership
+	formattedResults := []models.ExplicitOwnership{}
 
 	for _, ownership := range results {
-		formattedResult = append(formattedResult, ExplicitOwnership{ownership.Addr, ownership.StartTimestamp, ownership.Burned, ownership.ExtraData})
+		formattedResults = append(
+			formattedResults,
+			models.ExplicitOwnership{
+				Addr:           ownership.Addr,
+				StartTimestamp: ownership.StartTimestamp,
+				Burned:         ownership.Burned,
+				ExtraData:      ownership.ExtraData,
+			},
+		)
 	}
 
-	return formattedResult, nil
+	return formattedResults, nil
 }

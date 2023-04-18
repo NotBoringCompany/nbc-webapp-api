@@ -2,13 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"nbc-backend-api-v2/api/kos"
+	"nbc-backend-api-v2/configs"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func main() {
+	err := configs.LoadEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	app := fiber.New()
 
 	app.Use(cors.New())
@@ -18,7 +25,7 @@ func main() {
 	})
 
 	app.Get("/test", func(c *fiber.Ctx) error {
-		holderData, err := kos.GetHolderData()
+		holderData, err := kos.GetExplicitOwnerships()
 
 		if err != nil {
 			return c.SendString(err.Error())
