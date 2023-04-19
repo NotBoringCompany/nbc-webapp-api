@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/big"
 	SuperiorKeychain "nbc-backend-api-v2/api/nfts/superior-keychain"
 	"nbc-backend-api-v2/configs"
+	UtilsKOS "nbc-backend-api-v2/utils/nfts/kos"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -43,6 +45,11 @@ func main() {
 	app.Get("/testDB", func(c *fiber.Ctx) error {
 		data := configs.GetCollections(configs.DB, "RHDiscordAllianceData")
 		fmt.Printf("Type of data is %T", *data)
+		return c.SendString(fmt.Sprintf("%v", *data))
+	})
+
+	app.Get("/testFetch", func(c *fiber.Ctx) error {
+		data := UtilsKOS.FetchSimplifiedMetadata(big.NewInt(1))
 		return c.SendString(fmt.Sprintf("%v", *data))
 	})
 
