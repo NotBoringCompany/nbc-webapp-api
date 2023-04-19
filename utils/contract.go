@@ -21,7 +21,7 @@ func LoadContract(
 	concat bool,
 	rawClientUrl string,
 	abiPath string,
-	contractAddress string,
+	contractAddressEnv string,
 	caller bind.ContractCaller,
 	transactor bind.ContractTransactor,
 	filterer bind.ContractFilterer,
@@ -55,7 +55,7 @@ func LoadContract(
 	abiContent := string(abiContentBytes)
 
 	// contract address on the specific chain
-	addr := common.HexToAddress(contractAddress)
+	addr := common.HexToAddress(os.Getenv(contractAddressEnv))
 	abi, err := abi.JSON(strings.NewReader(abiContent))
 	if err != nil {
 		return nil, err

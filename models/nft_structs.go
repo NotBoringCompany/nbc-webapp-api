@@ -13,3 +13,9 @@ type ExplicitOwnership struct {
 	Burned         bool           `json:"burned"`
 	ExtraData      *big.Int       `json:"extraData"`
 }
+
+// gets ALL token IDs owned by `Addr` from a specific NFT collection.
+type OwnershipData struct {
+	Addr     common.Address `json:"addr"`
+	TokenIDs []*big.Int     `json:"tokenIDs"`
+}

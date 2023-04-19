@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"nbc-backend-api-v2/api/kos"
+	SuperiorKeychain "nbc-backend-api-v2/api/nfts/superior-keychain"
 	"nbc-backend-api-v2/configs"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,13 +24,19 @@ func main() {
 		return c.SendString("Hello, Worlddd!")
 	})
 
-	app.Get("/test", func(c *fiber.Ctx) error {
-		holderData, err := kos.GetExplicitOwnerships()
+	// scheduler := gocron.NewScheduler(time.Local)
 
+	// scheduler.Every(5).Seconds().Do(kos.VerifyOwnership, "0xb3bf8cd8Ba8BD013F4C318ED3C75C3f154a502fA", []*big.Int{big.NewInt(128), big.NewInt(2266)})
+
+	// scheduler.StartAsync()
+
+	app.Get("/test", func(c *fiber.Ctx) error {
+		data, err := SuperiorKeychain.OwnerIDs("0x8FbFE537A211d81F90774EE7002ff784E352024a")
 		if err != nil {
 			return c.SendString(err.Error())
 		}
-		return c.SendString(fmt.Sprintf("%v", holderData))
+
+		return c.SendString(fmt.Sprintf("%v", data))
 	})
 
 	app.Listen("localhost:3000")
