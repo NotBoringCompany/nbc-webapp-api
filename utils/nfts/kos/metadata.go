@@ -50,23 +50,6 @@ func FetchMetadata(tokenId *big.Int) *models.KOSMetadata {
 		return nil
 	}
 
-	// get the entire metadata.
-	// for _, attr := range metadata.Attributes {
-	// 	fmt.Println(attr.Value)
-	// 	// if val, ok := attr.Value.(string); ok {
-	// 	// 	fmt.Println(val)
-	// 	// } else if val, ok := attr.Value.(float64); ok {
-	// 	// 	fmt.Println(val)
-	// 	// }
-	// }
-
-	// // convert the metadata into a formatted version that returns a `KeyOfSalvation` struct.
-	// formattedMetadata := models.KeyOfSalvation{
-	// 	TokenID:    tokenId,
-	// 	HouseTrait: metadata["houseTrait"].(string),
-	// 	TypeTrait:  metadata["typeTrait"].(string),
-	// }
-
 	return &metadata
 }
 
