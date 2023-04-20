@@ -1,9 +1,10 @@
-package utils
+package utils_nfts
 
 import (
 	"encoding/json"
 	"math/big"
 	"nbc-backend-api-v2/models"
+	"nbc-backend-api-v2/utils"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -24,7 +25,7 @@ func GetExplicitOwnerships(
 	filterer bind.ContractFilterer,
 ) ([]models.ExplicitOwnership, error) {
 	// loads the contract
-	contract, err := LoadContract(
+	contract, err := utils.LoadContract(
 		apiKey,
 		concat,
 		rawClientUrl,
@@ -98,7 +99,7 @@ func GetOwnerIDs(
 	filterer bind.ContractFilterer,
 ) (*models.OwnershipData, error) {
 	// loads the contract
-	contract, err := LoadContract(
+	contract, err := utils.LoadContract(
 		apiKey,
 		concat,
 		rawClientUrl,

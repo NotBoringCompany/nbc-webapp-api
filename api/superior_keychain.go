@@ -1,18 +1,18 @@
-package superior_keychain
+package api
 
 import (
 	"math/big"
-	"nbc-backend-api-v2/utils"
+	UtilsNFT "nbc-backend-api-v2/utils/nfts"
 )
 
 /*
-`OwnerIDs` returns the owned token IDs for the given `address` for the Superior Keychain collection.
+`SuperiorKeychainOwnerIDs` returns the owned token IDs for the given `address` for the Superior Keychain collection.
 
 	`address` the EVM address of the owner
 */
-func OwnerIDs(address string) ([]*big.Int, error) {
+func SuperiorKeychainOwnerIDs(address string) ([]*big.Int, error) {
 	// calls `GetOwnerIds` for the Superior Keychain contract with the given address
-	ownerIds, err := utils.GetOwnerIDs(
+	ownerIds, err := UtilsNFT.GetOwnerIDs(
 		"ALCHEMY_ETH_API_KEY",
 		true,
 		"https://eth-mainnet.g.alchemy.com/v2/",

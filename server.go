@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	SuperiorKeychain "nbc-backend-api-v2/api/nfts/superior-keychain"
+	"nbc-backend-api-v2/api"
 	"nbc-backend-api-v2/configs"
 	UtilsKOS "nbc-backend-api-v2/utils/nfts/kos"
 
@@ -34,7 +34,7 @@ func main() {
 	// scheduler.StartAsync()
 
 	app.Get("/test", func(c *fiber.Ctx) error {
-		data, err := SuperiorKeychain.OwnerIDs("0x8FbFE537A211d81F90774EE7002ff784E352024a")
+		data, err := api.SuperiorKeychainOwnerIDs("0x8FbFE537A211d81F90774EE7002ff784E352024a")
 		if err != nil {
 			return c.SendString(err.Error())
 		}

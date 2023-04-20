@@ -1,10 +1,10 @@
-package kos
+package api
 
 import (
 	"fmt"
 	"math/big"
 	"nbc-backend-api-v2/models"
-	"nbc-backend-api-v2/utils"
+	UtilsNFT "nbc-backend-api-v2/utils/nfts"
 )
 
 /*
@@ -12,7 +12,7 @@ Calls `GetExplicitOwnerships` for the Key Of Salvation contract.
 */
 func kosExplicitOwnership() ([]models.ExplicitOwnership, error) {
 	// calls `GetExplicitOwnerships` for the Key Of Salvation with the given address
-	ownerships, err := utils.GetExplicitOwnerships(
+	ownerships, err := UtilsNFT.GetExplicitOwnerships(
 		"ALCHEMY_ETH_API_KEY",
 		true,
 		"https://eth-mainnet.g.alchemy.com/v2/",
@@ -31,13 +31,13 @@ func kosExplicitOwnership() ([]models.ExplicitOwnership, error) {
 }
 
 /*
-`OwnerIDs` returns the owned token IDs for the given `address` for the KOS collection.
+`KOSOwnerIDs` returns the owned token IDs for the given `address` for the KOS collection.
 
 	`address` the EVM address of the owner
 */
-func OwnerIDs(address string) ([]*big.Int, error) {
+func KOSOwnerIDs(address string) ([]*big.Int, error) {
 	// calls `GetOwnerIds` for the Key Of Salvation contract with the given address
-	ownerIds, err := utils.GetOwnerIDs(
+	ownerIds, err := UtilsNFT.GetOwnerIDs(
 		"ALCHEMY_ETH_API_KEY",
 		true,
 		"https://eth-mainnet.g.alchemy.com/v2/",
@@ -68,7 +68,7 @@ For multiple pools, this function should be called multiple times, each for each
 	`ids` the token IDs to check
 */
 func VerifyOwnership(address string, ids []*big.Int) (bool, error) {
-	currentOwnedIds, err := OwnerIDs(address)
+	currentOwnedIds, err := KOSOwnerIDs(address)
 	fmt.Println("Current owned ids: ", currentOwnedIds)
 	if err != nil {
 		return false, err
