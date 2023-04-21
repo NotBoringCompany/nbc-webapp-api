@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"log"
-	"math/big"
 	"nbc-backend-api-v2/models"
 	"net/http"
 	"os"
@@ -15,11 +14,11 @@ import (
 
 	`tokenId` the token ID of the Key
 */
-func FetchMetadata(tokenId *big.Int) *models.KOSMetadata {
+func FetchMetadata(tokenId int) *models.KOSMetadata {
 	// create a new HTTP client
 	client := &http.Client{}
 
-	url := os.Getenv("KOS_URI") + tokenId.String() + ".json"
+	url := os.Getenv("KOS_URI") + string(tokenId) + ".json"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal("Error while creating request", err)
@@ -58,7 +57,7 @@ func FetchMetadata(tokenId *big.Int) *models.KOSMetadata {
 
 	`tokenId` the token ID of the Key
 */
-func FetchSimplifiedMetadata(tokenId *big.Int) *models.KOSSimplifiedMetadata {
+func FetchSimplifiedMetadata(tokenId int) *models.KOSSimplifiedMetadata {
 	metadata := FetchMetadata(tokenId)
 
 	simplifiedMetadata := &models.KOSSimplifiedMetadata{
@@ -66,7 +65,7 @@ func FetchSimplifiedMetadata(tokenId *big.Int) *models.KOSSimplifiedMetadata {
 		HouseTrait:     metadata.Attributes[3].Value.(string),
 		TypeTrait:      metadata.Attributes[7].Value.(string),
 		LuckTrait:      metadata.Attributes[0].Value.(float64),
-		LuckBoostTrait: metadata.Attributes[1].Value.(float64),
+		LuckBoostTrait: 1 + (metadata.Attributes[1].Value.(float64) / 100),
 	}
 
 	return simplifiedMetadata

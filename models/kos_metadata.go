@@ -1,7 +1,5 @@
 package models
 
-import "math/big"
-
 /*
 Represents the full metadata for a Key Of Salvation.
 */
@@ -16,11 +14,11 @@ type KOSMetadata struct {
 Represents a Key Of Salvation's metadata. A more simplified version compared to the `KOSMetadata` struct.
 */
 type KOSSimplifiedMetadata struct {
-	TokenID        *big.Int `bson:"tokenID"`        // the token ID of the Key Of Salvation
-	HouseTrait     string   `bson:"houseTrait"`     // the house trait of the Key Of Salvation
-	TypeTrait      string   `bson:"typeTrait"`      // the type trait of the Key Of Salvation
-	LuckTrait      float64  `bson:"luckTrait"`      // the luck trait of the Key Of Salvation
-	LuckBoostTrait float64  `bson:"luckBoostTrait"` // the luck boost trait of the Key Of Salvation
+	TokenID        int     `bson:"tokenID"`        // the token ID of the Key Of Salvation
+	HouseTrait     string  `bson:"houseTrait"`     // the house trait of the Key Of Salvation
+	TypeTrait      string  `bson:"typeTrait"`      // the type trait of the Key Of Salvation
+	LuckTrait      float64 `bson:"luckTrait"`      // the luck trait of the Key Of Salvation
+	LuckBoostTrait float64 `bson:"luckBoostTrait"` // the luck boost trait of the Key Of Salvation
 }
 
 /*

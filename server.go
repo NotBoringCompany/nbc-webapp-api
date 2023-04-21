@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"math/big"
 	"nbc-backend-api-v2/api"
 	"nbc-backend-api-v2/configs"
+	"nbc-backend-api-v2/models"
 	UtilsKOS "nbc-backend-api-v2/utils/nfts/kos"
 
 	"github.com/gofiber/fiber/v2"
@@ -49,7 +49,7 @@ func main() {
 	})
 
 	app.Get("/testFetch", func(c *fiber.Ctx) error {
-		data := UtilsKOS.FetchSimplifiedMetadata(big.NewInt(1))
+		data := UtilsKOS.FetchSimplifiedMetadata(1)
 		return c.SendString(fmt.Sprintf("%v", *data))
 	})
 
@@ -70,6 +70,50 @@ func main() {
 		}
 
 		return c.SendString("Success")
+	})
+
+	app.Get("/testAddSubpool", func(c *fiber.Ctx) error {
+		metadata1 := &models.KOSSimplifiedMetadata{
+			TokenID:        1,
+			HouseTrait:     "Glory",
+			TypeTrait:      "Electric",
+			LuckTrait:      40,
+			LuckBoostTrait: 1.2,
+		}
+
+		metadata2 := &models.KOSSimplifiedMetadata{
+			TokenID:        2,
+			HouseTrait:     "Glory",
+			TypeTrait:      "Electric",
+			LuckTrait:      60,
+			LuckBoostTrait: 1.2,
+		}
+
+		arr := []*models.KOSSimplifiedMetadata{metadata1, metadata2}
+		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 1, nil, arr, -1, -1)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.SendString("Success")
+	})
+
+	app.Get("/getHighestSubpoolID", func(c *fiber.Ctx) error {
+		id, err := UtilsKOS.GetNextSubpoolID(configs.GetCollections(configs.DB, "RHStakingPool"), 1)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(id)
+	})
+
+	app.Get("/getAllStakedKeyIDs", func(c *fiber.Ctx) error {
+		keyIds, err := UtilsKOS.GetAllStakedKeyIDs(configs.GetCollections(configs.DB, "RHStakingPool"), 1)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(keyIds)
 	})
 
 	app.Listen("localhost:3000")
