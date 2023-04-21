@@ -74,23 +74,23 @@ func main() {
 
 	app.Get("/testAddSubpool", func(c *fiber.Ctx) error {
 		metadata1 := &models.KOSSimplifiedMetadata{
-			TokenID:        1,
+			TokenID:        7,
 			HouseTrait:     "Glory",
 			TypeTrait:      "Electric",
-			LuckTrait:      40,
-			LuckBoostTrait: 1.2,
+			LuckTrait:      86,
+			LuckBoostTrait: 1,
 		}
 
 		metadata2 := &models.KOSSimplifiedMetadata{
-			TokenID:        2,
-			HouseTrait:     "Glory",
+			TokenID:        8,
+			HouseTrait:     "Chaos",
 			TypeTrait:      "Electric",
-			LuckTrait:      60,
+			LuckTrait:      33,
 			LuckBoostTrait: 1.2,
 		}
 
 		arr := []*models.KOSSimplifiedMetadata{metadata1, metadata2}
-		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 1, nil, arr, -1, -1)
+		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 1, nil, arr, -1, 13)
 		if err != nil {
 			return c.SendString(err.Error())
 		}
@@ -114,6 +114,24 @@ func main() {
 		}
 
 		return c.JSON(keyIds)
+	})
+
+	app.Get("/getAllStakedKeychainIDs", func(c *fiber.Ctx) error {
+		keychainIds, err := UtilsKOS.GetAllStakedKeychainIDs(configs.GetCollections(configs.DB, "RHStakingPool"), 1)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(keychainIds)
+	})
+
+	app.Get("/getStakedSuperiorKeychainIds", func(c *fiber.Ctx) error {
+		keychainIds, err := UtilsKOS.GetAllStakedSuperiorKeychainIDs(configs.GetCollections(configs.DB, "RHStakingPool"), 1)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(keychainIds)
 	})
 
 	app.Listen("localhost:3000")

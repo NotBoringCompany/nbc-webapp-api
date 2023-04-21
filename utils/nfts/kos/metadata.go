@@ -2,6 +2,7 @@ package utils_kos
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"nbc-backend-api-v2/models"
@@ -18,7 +19,7 @@ func FetchMetadata(tokenId int) *models.KOSMetadata {
 	// create a new HTTP client
 	client := &http.Client{}
 
-	url := os.Getenv("KOS_URI") + string(tokenId) + ".json"
+	url := os.Getenv("KOS_URI") + fmt.Sprint(tokenId) + ".json"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal("Error while creating request", err)

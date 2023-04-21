@@ -75,6 +75,17 @@ func AddSubpool(
 		return errors.New("collection must be RHStakingPool")
 	}
 
+	// check if any of the keys in `keys` are already staked.
+	// if even just one of them are, return an error.
+	checkKeysStaked, err := CheckIfKeysStaked(collection, stakingPoolId, keys)
+	if err != nil {
+		return err
+	}
+
+	if checkKeysStaked {
+		return errors.New("1 or more keys are already staked. please stake a set of keys that are not yet staked")
+	}
+
 	// ensures that there is at least 1 key staked.
 	if len(keys) == 0 || keys == nil {
 		return errors.New("must stake at least 1 key")
@@ -92,9 +103,21 @@ func AddSubpool(
 		if keychainId != -1 {
 			return errors.New("cannot stake a keychain with 15 keys")
 		}
+
+		if keychainId == 0 {
+			return errors.New("invalid keychain id")
+		}
 	} else {
 		if keychainId != -1 && superiorKeychainId != -1 {
 			return errors.New("cannot stake a keychain and a superior keychain")
+		}
+
+		if keychainId == 0 {
+			return errors.New("invalid keychain id")
+		}
+
+		if superiorKeychainId == 0 {
+			return errors.New("invalid superior keychain id")
 		}
 	}
 
@@ -143,7 +166,7 @@ Gets the next staking pool ID from the RHStakingPool collection.
 func GetNextStakingPoolID(collection *mongo.Collection) (int, error) {
 	// collection must be RHStakingPool.
 	if collection.Name() != "RHStakingPool" {
-		return -1, errors.New("collection must be RHStakingPool")
+		return 0, errors.New("collection must be RHStakingPool")
 	}
 
 	pipeline := mongo.Pipeline{
@@ -154,7 +177,7 @@ func GetNextStakingPoolID(collection *mongo.Collection) (int, error) {
 
 	cursor, err := collection.Aggregate(context.Background(), pipeline)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
 	defer cursor.Close(context.Background())
@@ -163,7 +186,7 @@ func GetNextStakingPoolID(collection *mongo.Collection) (int, error) {
 	if cursor.Next(context.Background()) {
 		err = cursor.Decode(&result)
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 	}
 
@@ -178,7 +201,7 @@ Gets the next subpool ID from a specific staking pool with `stakingPoolId`. Diff
 func GetNextSubpoolID(collection *mongo.Collection, stakingPoolId int) (int, error) {
 	// collection must be RHStakingPool.
 	if collection.Name() != "RHStakingPool" {
-		return -1, errors.New("collection must be RHStakingPool")
+		return 0, errors.New("collection must be RHStakingPool")
 	}
 
 	pipeline := mongo.Pipeline{
@@ -191,7 +214,7 @@ func GetNextSubpoolID(collection *mongo.Collection, stakingPoolId int) (int, err
 
 	cursor, err := collection.Aggregate(context.Background(), pipeline)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
 	defer cursor.Close(context.Background())
@@ -200,7 +223,7 @@ func GetNextSubpoolID(collection *mongo.Collection, stakingPoolId int) (int, err
 	if cursor.Next(context.Background()) {
 		err = cursor.Decode(&result)
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 	}
 
