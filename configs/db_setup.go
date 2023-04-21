@@ -44,5 +44,5 @@ var DB *mongo.Client = ConnectMongo()
 `GetCollections` returns a collection instance from the database given the collection name.
 */
 func GetCollections(client *mongo.Client, collectionName string) *mongo.Collection {
-	return client.Database("test").Collection(collectionName)
+	return client.Database("RealmHunter").Collection(collectionName)
 }

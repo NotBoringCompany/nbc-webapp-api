@@ -53,5 +53,24 @@ func main() {
 		return c.SendString(fmt.Sprintf("%v", *data))
 	})
 
+	app.Get("/stakePoolID", func(c *fiber.Ctx) error {
+		id, err := UtilsKOS.GetNextStakingPoolID(configs.GetCollections(configs.DB, "RHStakingPool"))
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(id)
+	})
+
+	app.Get("/testAddStakingPool", func(c *fiber.Ctx) error {
+		err := UtilsKOS.AddStakingPool(configs.GetCollections(configs.DB, "RHStakingPool"), "Yes", 123)
+
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.SendString("Success")
+	})
+
 	app.Listen("localhost:3000")
 }

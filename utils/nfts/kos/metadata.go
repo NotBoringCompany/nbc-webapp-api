@@ -2,7 +2,7 @@ package utils_kos
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/big"
 	"nbc-backend-api-v2/models"
@@ -36,7 +36,7 @@ func FetchMetadata(tokenId *big.Int) *models.KOSMetadata {
 	defer res.Body.Close()
 
 	// read the response body into a byte array
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Fatal("Error while reading response body", err)
 		return nil

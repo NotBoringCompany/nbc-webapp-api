@@ -12,14 +12,15 @@ import (
 Defines the `StakingPool` collection which is used to store all staking pool data.
 */
 type StakingPool struct {
-	ID               primitive.ObjectID    `bson:"_id,omitempty"`              // the object ID of the staking pool
-	StakingPoolID    int                   `bson:"stakingPoolID,omitempty"`    // unique ID for each staking pool (starts at 1 for the first staking pool, increments everytime)
-	Reward           Reward                `bson:"reward,omitempty"`           // the reward for staking in this pool
-	TotalYieldPoints int                   `bson:"totalYieldPoints,omitempty"` // the total yield points generated across ALL stakers (calculated from `StakingSubpool`)
-	StartTime        time.Time             `bson:"startTime,omitempty"`        // the start time of the staking pool (when the staking pool is created)
-	EndTime          time.Time             `bson:"endTime,omitempty"`          // when the staking pool ends (when the staking pool is closed)
-	ActiveSubpools   []*primitive.ObjectID `bson:"activeSubpools,omitempty"`   // the active subpools for this staking pool (points to a subpool instance from the `StakingSubpool` collection)
-	ClosedSubpools   []*primitive.ObjectID `bson:"closedSubpools,omitempty"`   // the closed subpools for this staking pool (either by unstaking, bans or after the pool ends. points to a subpool instance from the `StakingSubpool` collection)
+	ID                 primitive.ObjectID    `bson:"_id,omitempty"`                // the object ID of the staking pool
+	StakingPoolID      int                   `bson:"stakingPoolID,omitempty"`      // unique ID for each staking pool (starts at 1 for the first staking pool, increments everytime)
+	Reward             Reward                `bson:"reward,omitempty"`             // the reward for staking in this pool
+	TotalYieldPoints   int                   `bson:"totalYieldPoints,omitempty"`   // the total yield points generated across ALL stakers (calculated from `StakingSubpool`)
+	StartTime          time.Time             `bson:"startTime,omitempty"`          // the start time of the staking pool (when the staking pool is created)
+	StakeTimeAllowance time.Time             `bson:"stakeTimeAllowance,omitempty"` // the time until when staking in this pool is allowed (when the staking pool is created + 1 dayu)
+	EndTime            time.Time             `bson:"endTime,omitempty"`            // when the staking pool ends (when the staking pool is closed)
+	ActiveSubpools     []*primitive.ObjectID `bson:"activeSubpools,omitempty"`     // the active subpools for this staking pool (points to a subpool instance from the `StakingSubpool` collection)
+	ClosedSubpools     []*primitive.ObjectID `bson:"closedSubpools,omitempty"`     // the closed subpools for this staking pool (either by unstaking, bans or after the pool ends. points to a subpool instance from the `StakingSubpool` collection)
 }
 
 /*
@@ -66,4 +67,13 @@ Represents a Reward for a staking pool.
 type Reward struct {
 	Name   string `bson:"name"`   // example: "REC", "Limited Edition Collection X", etc.
 	Amount int    `bson:"amount"` // the amount of the rewards. example: if Name is "REC" and Amount is 100, then the reward is 100 REC in total.
+}
+
+/*
+Represents a KeyCombo struct, used to determine the key combo multiplier when staking.
+*/
+type KeyCombo struct {
+	KeyCount int      `bson:"keyCount"` // the number of keys in the combo (only 1, 2, 3, 5 and 15 accepted)
+	Houses   []string `bson:"houses"`   // the house of each key
+	Types    []string `bson:"types"`    // the type of each key
 }
