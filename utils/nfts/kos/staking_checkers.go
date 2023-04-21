@@ -96,6 +96,26 @@ func GetAllStakedKeyIDs(collection *mongo.Collection, stakingPoolId int) ([]int,
 }
 
 /*
+Checks if a keychain with ID `keychainId` has already been staked in a specific staking pool.
+*/
+func CheckIfKeychainStaked(collection *mongo.Collection, stakingPoolId, keychainId int) (bool, error) {
+	// call `GetAllStakedKeychainIDs` to get all the keychain IDs that have been staked in the staking pool
+	stakedKeychainIDs, err := GetAllStakedKeychainIDs(collection, stakingPoolId)
+	if err != nil {
+		return true, err
+	}
+
+	// check if the keychain ID is in the list of staked keychain IDs
+	for _, stakedKeychainID := range stakedKeychainIDs {
+		if stakedKeychainID == keychainId {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+/*
 Gets all the keychain IDs that have been staked in a specific staking pool.
 */
 func GetAllStakedKeychainIDs(collection *mongo.Collection, stakingPoolId int) ([]int, error) {
@@ -136,6 +156,26 @@ func GetAllStakedKeychainIDs(collection *mongo.Collection, stakingPoolId int) ([
 	defer cursor.Close(context.Background())
 
 	return keychainIDs, nil
+}
+
+/*
+Checks if a superior keychain with ID `superiorKeychainId` has already been staked in a specific staking pool.
+*/
+func CheckIfSuperiorKeychainStaked(collection *mongo.Collection, stakingPoolId, superiorKeychainId int) (bool, error) {
+	// call `GetAllStakedSuperiorKeychainIDs` to get all the superior keychain IDs that have been staked in the staking pool
+	stakedSuperiorKeychainIDs, err := GetAllStakedSuperiorKeychainIDs(collection, stakingPoolId)
+	if err != nil {
+		return true, err
+	}
+
+	// check if the superior keychain ID is in the list of staked superior keychain IDs
+	for _, stakedSuperiorKeychainID := range stakedSuperiorKeychainIDs {
+		if stakedSuperiorKeychainID == superiorKeychainId {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 /*
