@@ -12,8 +12,10 @@ import (
 )
 
 /*
-Checks if the time now has passed the `StakeTimeAllowance` for Staking Pool ID `stakingPoolId`.
+Checks if the time now has passed the `StartTime` for Staking Pool ID `stakingPoolId`.
 if yes, stakers are no longer allowed to add subpools into that staking pool.
+It also checks if the time now is before the `EntryAllowance` for Staking Pool ID `stakingPoolId`.
+If yes, stakers are not allowed to add subpools into that staking pool.
 */
 func CheckPoolTimeAllowanceExceeded(collection *mongo.Collection, stakingPoolId int) (bool, error) {
 	if collection.Name() != "RHStakingPool" {
@@ -28,12 +30,16 @@ func CheckPoolTimeAllowanceExceeded(collection *mongo.Collection, stakingPoolId 
 		return true, err
 	}
 
-	// check if the time now has passed the `StakeTimeAllowance` for the staking pool
+	// check if the time now has passed the `StartTime` for the staking pool
 	now := time.Now()
-	if now.After(stakingPool.StakeTimeAllowance) {
-		return true, nil // time allowance exceeded
+	if now.Before(stakingPool.EntryAllowance) {
+		return true, nil // entry is not allowed yet.
 	} else {
-		return false, nil // time allowance not exceeded
+		if now.After(stakingPool.StartTime) {
+			return true, nil // time allowance exceeded
+		} else {
+			return false, nil // time allowance not exceeded
+		}
 	}
 }
 

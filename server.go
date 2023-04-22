@@ -63,7 +63,7 @@ func main() {
 	})
 
 	app.Get("/testAddStakingPool", func(c *fiber.Ctx) error {
-		err := UtilsKOS.AddStakingPool(configs.GetCollections(configs.DB, "RHStakingPool"), "Yes", 123)
+		err := UtilsKOS.AddStakingPool(configs.GetCollections(configs.DB, "RHStakingPool"), "REC", 500000)
 
 		if err != nil {
 			return c.SendString(err.Error())
@@ -74,23 +74,23 @@ func main() {
 
 	app.Get("/testAddSubpool", func(c *fiber.Ctx) error {
 		metadata1 := &models.KOSSimplifiedMetadata{
-			TokenID:        3,
+			TokenID:        5,
 			HouseTrait:     "Glory",
 			TypeTrait:      "Electric",
-			LuckTrait:      86,
+			LuckTrait:      55,
 			LuckBoostTrait: 1,
 		}
 
 		metadata2 := &models.KOSSimplifiedMetadata{
-			TokenID:        4,
+			TokenID:        6,
 			HouseTrait:     "Chaos",
 			TypeTrait:      "Electric",
-			LuckTrait:      33,
+			LuckTrait:      23,
 			LuckBoostTrait: 1.2,
 		}
 
 		arr := []*models.KOSSimplifiedMetadata{metadata1, metadata2}
-		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 1, "0x8FbFE537A211d81F90774EE7002ff784E352024a", arr, -1, 13)
+		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 1, "0x8FbFE537A211d81F90774EE7002ff784E352024a", arr, -1, 4)
 		if err != nil {
 			return c.SendString(err.Error())
 		}
@@ -141,6 +141,33 @@ func main() {
 		}
 
 		return c.JSON(exceeded)
+	})
+
+	app.Get("/testSubpoolPointsCalc", func(c *fiber.Ctx) error {
+		points, err := UtilsKOS.GetAccSubpoolPoints(configs.GetCollections(configs.DB, "RHStakingPool"), 1, 1)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(points)
+	})
+
+	app.Get("/totalSubpoolPoints", func(c *fiber.Ctx) error {
+		points, err := UtilsKOS.GetTotalSubpoolPoints(configs.GetCollections(configs.DB, "RHStakingPool"), 1)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(points)
+	})
+
+	app.Get("/tokenShare", func(c *fiber.Ctx) error {
+		share, err := UtilsKOS.CalcSubpoolTokenShare(configs.GetCollections(configs.DB, "RHStakingPool"), 1, 1)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(share)
 	})
 
 	// app.Get("/testAddStaker", func(c *fiber.Ctx) error {
