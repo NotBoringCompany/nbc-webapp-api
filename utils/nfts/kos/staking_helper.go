@@ -6,12 +6,70 @@ import (
 	"fmt"
 	"math"
 	"nbc-backend-api-v2/models"
+	"nbc-backend-api-v2/utils"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+/*
+Adds a staker to the RHStakerData collection.
+Since it's a new staker, only the wallet is needed.
+*/
+func AddStaker(collection *mongo.Collection, wallet string) error {
+	if collection.Name() != "RHStakerData" {
+		return errors.New("collection must be RHStakerData")
+	}
+
+	// checks if `wallet` exists in RHStakerData.
+	exists, err := CheckStakerExists(collection, wallet)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("staker with the given wallet already exists")
+	}
+
+	// checks whether `wallet` has a valid checksum address
+	isValidChecksum := utils.ValidChecksum(wallet)
+	if !isValidChecksum {
+		return errors.New("invalid checksum address")
+	}
+
+	// create a new staker instance and add it to `RHStakerData`
+	staker := &models.Staker{
+		Wallet: wallet,
+	}
+
+	result, err := collection.InsertOne(context.Background(), staker)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Added staker with Object ID: ", result.InsertedID)
+
+	return nil
+}
+
+/*
+Checks if a Staker instance with `wallet` exists in RHStakerData.
+*/
+func CheckStakerExists(collection *mongo.Collection, wallet string) (bool, error) {
+	filter := bson.M{"wallet": wallet}
+
+	var staker models.Staker
+	err := collection.FindOne(context.Background(), filter).Decode(&staker)
+
+	if err == mongo.ErrNoDocuments {
+		return false, nil // returns false if staker with `wallet` does not exist
+	} else if err != nil {
+		return true, err // defaults to true if an error occurs
+	} else {
+		return true, nil // staker with `wallet` exists already
+	}
+}
 
 /*
 Adds a new staking pool to the RHStakingPool collection.

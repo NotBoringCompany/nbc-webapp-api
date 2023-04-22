@@ -134,5 +134,14 @@ func main() {
 		return c.JSON(keychainIds)
 	})
 
+	app.Get("/testAddStaker", func(c *fiber.Ctx) error {
+		err := UtilsKOS.AddStaker(configs.GetCollections(configs.DB, "RHStakerData"), "0xbc01Db6ea15c344529159F9c9D8eAb37C130a3bE")
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.SendString("Success")
+	})
+
 	app.Listen("localhost:3000")
 }
