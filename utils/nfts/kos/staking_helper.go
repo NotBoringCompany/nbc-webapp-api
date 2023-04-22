@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
 	"nbc-backend-api-v2/utils"
 	"time"
@@ -18,24 +19,24 @@ import (
 Adds a staker to the RHStakerData collection.
 Since it's a new staker, only the wallet is needed.
 */
-func AddStaker(collection *mongo.Collection, wallet string) error {
+func AddStaker(collection *mongo.Collection, wallet string) (*primitive.ObjectID, error) {
 	if collection.Name() != "RHStakerData" {
-		return errors.New("collection must be RHStakerData")
+		return nil, errors.New("collection must be RHStakerData")
 	}
 
-	// checks if `wallet` exists in RHStakerData.
+	// checks if `wallet` exists in RHStakerData. if it exists, return an error.
 	exists, err := CheckStakerExists(collection, wallet)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if exists {
-		return errors.New("staker with the given wallet already exists")
+		return nil, errors.New("staker with the given wallet already exists")
 	}
 
 	// checks whether `wallet` has a valid checksum address
 	isValidChecksum := utils.ValidChecksum(wallet)
 	if !isValidChecksum {
-		return errors.New("invalid checksum address")
+		return nil, errors.New("invalid checksum address")
 	}
 
 	// create a new staker instance and add it to `RHStakerData`
@@ -45,12 +46,14 @@ func AddStaker(collection *mongo.Collection, wallet string) error {
 
 	result, err := collection.InsertOne(context.Background(), staker)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("Added staker with Object ID: ", result.InsertedID)
 
-	return nil
+	var stakerID primitive.ObjectID
+
+	return &stakerID, nil
 }
 
 /*
@@ -69,6 +72,26 @@ func CheckStakerExists(collection *mongo.Collection, wallet string) (bool, error
 	} else {
 		return true, nil // staker with `wallet` exists already
 	}
+}
+
+/*
+Returns the object ID of a Staker given a `wallet`.
+*/
+func GetStakerInstance(collection *mongo.Collection, wallet string) (*primitive.ObjectID, error) {
+	if collection.Name() != "RHStakerData" {
+		return nil, errors.New("collection must be RHStakerData")
+	}
+
+	filter := bson.M{"wallet": wallet}
+
+	var staker models.Staker
+	err := collection.FindOne(context.Background(), filter).Decode(&staker)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &staker.ID, nil
 }
 
 /*
@@ -115,7 +138,7 @@ Every time a user stakes, it counts as a new subpool. If a user has 10 keys and 
 
 	`collection` the collection to add the subpool to (must be RHStakingPool)
 	`stakingPoolId` the main staking pool ID (to add the subpool instance into)
-	`staker` the staker instance
+	`stakerWallet` the staker's wallet to check against `RHStakerData`
 	`keys` the key IDs staked
 	`keychain` the keychain ID staked
 	`superiorKeychain` the superior keychain ID staked
@@ -123,7 +146,7 @@ Every time a user stakes, it counts as a new subpool. If a user has 10 keys and 
 func AddSubpool(
 	collection *mongo.Collection,
 	stakingPoolId int,
-	staker *primitive.ObjectID,
+	stakerWallet string,
 	keys []*models.KOSSimplifiedMetadata,
 	keychainId int,
 	superiorKeychainId int,
@@ -133,49 +156,49 @@ func AddSubpool(
 		return errors.New("collection must be RHStakingPool")
 	}
 
+	// check if time is within stake time allowance.
+	timeExceeded, err := CheckPoolTimeAllowanceExceeded(collection, stakingPoolId)
+	if err != nil {
+		return err
+	}
+	if timeExceeded {
+		return errors.New("time allowance for this staking pool has passed. please wait for the next staking pool to open")
+	}
+
 	// check if any of the keys in `keys` are already staked.
 	// if even just one of them are, return an error.
 	checkKeysStaked, err := CheckIfKeysStaked(collection, stakingPoolId, keys)
 	if err != nil {
 		return err
 	}
-
 	if checkKeysStaked {
 		return errors.New("1 or more keys are already staked. please stake a set of keys that are not yet staked")
 	}
 
-	// ensures that there is at least 1 key staked.
-	if len(keys) == 0 || keys == nil {
-		return errors.New("must stake at least 1 key")
+	// calls `CheckKeysToStakeEligibility` to check for amount of keys to stake, keychain, and superior keychain eligibility.
+	// if any of the checks fail, return an error.
+	err = CheckKeysToStakeEligiblity(keys, keychainId, superiorKeychainId)
+	if err != nil {
+		return err
 	}
 
-	// users can only stake 1, 2, 3, 5 or 15 keys. No other amount is allowed.
-	if len(keys) != 1 && len(keys) != 2 && len(keys) != 3 && len(keys) != 5 && len(keys) != 15 {
-		return errors.New("must stake 1, 2, 3, 5 or 15 keys")
+	var stakerObjId *primitive.ObjectID
+
+	// after all checks, check if the staker exists in `RHStakerData`. if not, create a new staker instance.
+	exists, err := CheckStakerExists(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
+	if err != nil {
+		return err
 	}
-
-	// if the user stakes 1, 2, 3 or 5 keys, they are only allowed to use either 1 keychain or 1 superior keychain.
-	// if a user stakes 15, they are ONLY allowed to use a superior keychain.
-	// NOTE: there cannot be more than 1 keychain or superior keychain staked.
-	if len(keys) == 15 {
-		if keychainId != -1 {
-			return errors.New("cannot stake a keychain with 15 keys")
-		}
-
-		if keychainId == 0 {
-			return errors.New("invalid keychain id")
+	if !exists {
+		fmt.Printf("staker with address %v does not exist. creating a new staker instance...", stakerWallet)
+		stakerObjId, err = AddStaker(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet) // create a new staker instance and get the object ID.
+		if err != nil {
+			return err
 		}
 	} else {
-		if keychainId != -1 && superiorKeychainId != -1 {
-			return errors.New("cannot stake a keychain and a superior keychain")
-		}
-
-		if keychainId == 0 {
-			return errors.New("invalid keychain id")
-		}
-
-		if superiorKeychainId == 0 {
-			return errors.New("invalid superior keychain id")
+		stakerObjId, err = GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet) // get the staker instance and get the object ID.
+		if err != nil {
+			return err
 		}
 	}
 
@@ -199,7 +222,7 @@ func AddSubpool(
 
 	subpool := &models.StakingSubpool{
 		SubpoolID:                nextSubpoolId,
-		Staker:                   staker,
+		Staker:                   stakerObjId,
 		EnterTime:                time.Now(),
 		StakedKeys:               keys,
 		StakedKeychainID:         keychainId,

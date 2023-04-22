@@ -5,10 +5,79 @@ import (
 	"errors"
 	"fmt"
 	"nbc-backend-api-v2/models"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+/*
+Checks if the time now has passed the `StakeTimeAllowance` for Staking Pool ID `stakingPoolId`.
+if yes, stakers are no longer allowed to add subpools into that staking pool.
+*/
+func CheckPoolTimeAllowanceExceeded(collection *mongo.Collection, stakingPoolId int) (bool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return true, errors.New("invalid collection name") // defaults to true if an error occurs
+	}
+
+	// get the staking pool document with the staking pool ID
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	var stakingPool models.StakingPool
+	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return true, err
+	}
+
+	// check if the time now has passed the `StakeTimeAllowance` for the staking pool
+	now := time.Now()
+	if now.After(stakingPool.StakeTimeAllowance) {
+		return true, nil // time allowance exceeded
+	} else {
+		return false, nil // time allowance not exceeded
+	}
+}
+
+/*
+Multiple checks to ensure the eligibility of a user to add a subpool with regards to the keys and keychain/superior keychain to stake.
+*/
+func CheckKeysToStakeEligiblity(keys []*models.KOSSimplifiedMetadata, keychainId, superiorKeychainId int) error {
+	// ensures that there is at least 1 key to stake.
+	if len(keys) == 0 || keys == nil {
+		return errors.New("must stake at least 1 key")
+	}
+
+	// checks if there are 1, 2, 3, 5 or 15 keys to stake. no other amount is allowed.
+	if len(keys) != 1 && len(keys) != 2 && len(keys) != 3 && len(keys) != 5 && len(keys) != 15 {
+		return errors.New("must stake 1, 2, 3, 5 or 15 keys")
+	}
+
+	// if a user stakes 1, 2, 3 or 5 keys, they are only allowed to use EITHER 1 keychain or 1 superior keychain.
+	// this means that if keychainId != -1, then superiorKeychainId must be -1 and vice versa.
+	// if a user stakes 15 keys, they are ONLY allowed to use a superior keychain.
+	// NOTE: each subpool is allowed to only have 1 keychain or 1 superior keychain regardless.
+	if len(keys) == 15 {
+		if keychainId != -1 {
+			return errors.New("cannot use keychain when staking 15 keys. please use a superior keychain instead or open multiple subpools")
+		}
+		if keychainId == 0 {
+			return errors.New("invalid keychain ID")
+		}
+		if superiorKeychainId == 0 {
+			return errors.New("invalid superior keychain ID")
+		}
+	} else {
+		if keychainId != -1 && superiorKeychainId != -1 {
+			return errors.New("cannot stake both keychain and superior keychain in one subpool. please use either a keychain or a superior keychain")
+		}
+		if keychainId == 0 {
+			return errors.New("invalid keychain ID")
+		}
+		if superiorKeychainId == 0 {
+			return errors.New("invalid superior keychain ID")
+		}
+	}
+
+}
 
 /*
 Checks if ANY of the keys that a user wants to add to a subpool has already been staked in that particular staking pool.

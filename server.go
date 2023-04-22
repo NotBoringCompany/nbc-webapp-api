@@ -74,7 +74,7 @@ func main() {
 
 	app.Get("/testAddSubpool", func(c *fiber.Ctx) error {
 		metadata1 := &models.KOSSimplifiedMetadata{
-			TokenID:        7,
+			TokenID:        3,
 			HouseTrait:     "Glory",
 			TypeTrait:      "Electric",
 			LuckTrait:      86,
@@ -82,7 +82,7 @@ func main() {
 		}
 
 		metadata2 := &models.KOSSimplifiedMetadata{
-			TokenID:        8,
+			TokenID:        4,
 			HouseTrait:     "Chaos",
 			TypeTrait:      "Electric",
 			LuckTrait:      33,
@@ -90,7 +90,7 @@ func main() {
 		}
 
 		arr := []*models.KOSSimplifiedMetadata{metadata1, metadata2}
-		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 1, nil, arr, -1, 13)
+		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 1, "0x8FbFE537A211d81F90774EE7002ff784E352024a", arr, -1, 13)
 		if err != nil {
 			return c.SendString(err.Error())
 		}
@@ -134,14 +134,23 @@ func main() {
 		return c.JSON(keychainIds)
 	})
 
-	app.Get("/testAddStaker", func(c *fiber.Ctx) error {
-		err := UtilsKOS.AddStaker(configs.GetCollections(configs.DB, "RHStakerData"), "0xbc01Db6ea15c344529159F9c9D8eAb37C130a3bE")
+	app.Get("/timeExceeded", func(c *fiber.Ctx) error {
+		exceeded, err := UtilsKOS.CheckPoolTimeAllowanceExceeded(configs.GetCollections(configs.DB, "RHStakingPool"), 1)
 		if err != nil {
 			return c.SendString(err.Error())
 		}
 
-		return c.SendString("Success")
+		return c.JSON(exceeded)
 	})
+
+	// app.Get("/testAddStaker", func(c *fiber.Ctx) error {
+	// 	err := UtilsKOS.AddStaker(configs.GetCollections(configs.DB, "RHStakerData"), "0xbc01Db6ea15c344529159F9c9D8eAb37C130a3bE")
+	// 	if err != nil {
+	// 		return c.SendString(err.Error())
+	// 	}
+
+	// 	return c.SendString("Success")
+	// })
 
 	app.Listen("localhost:3000")
 }
