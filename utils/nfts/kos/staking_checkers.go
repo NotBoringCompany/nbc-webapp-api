@@ -77,6 +77,7 @@ func CheckKeysToStakeEligiblity(keys []*models.KOSSimplifiedMetadata, keychainId
 		}
 	}
 
+	return nil
 }
 
 /*
