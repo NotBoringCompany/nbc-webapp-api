@@ -724,27 +724,30 @@ func GetNextSubpoolID(collection *mongo.Collection, stakingPoolId int) (int, err
 		return 0, errors.New("collection must be RHStakingPool")
 	}
 
-	// finds the max subpool ID from the staking pool from both active and closed subpools.
+	// searches for the highest staking pool id from both active and closed subpools.
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: bson.M{"stakingPoolID": stakingPoolId}}},
+		bson.D{{Key: "$project", Value: bson.M{
+			"activeSubpools": bson.M{"$ifNull": []interface{}{"$activeSubpools", bson.A{}}},
+			"closedSubpools": bson.M{"$ifNull": []interface{}{"$closedSubpools", bson.A{}}},
+		}}},
 		bson.D{{Key: "$project", Value: bson.M{
 			"allSubpools": bson.M{"$concatArrays": []interface{}{"$activeSubpools", "$closedSubpools"}},
 		}}},
 		bson.D{{Key: "$unwind", Value: "$allSubpools"}},
-		bson.D{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: "$_id"},
-			{Key: "maxSubpoolID", Value: bson.D{{Key: "$max", Value: "$allSubpools.subpoolID"}}},
+		bson.D{{Key: "$group", Value: bson.M{
+			"_id":        "$_id",
+			"maxSubpool": bson.M{"$max": "$allSubpools.subpoolID"},
 		}}},
 	}
 
+	var result struct{ MaxSubpool int } // returns the highest subpool ID from the staking pool here.
 	cursor, err := collection.Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return 0, err
 	}
-
 	defer cursor.Close(context.Background())
 
-	var result struct{ MaxSubpoolID int }
 	if cursor.Next(context.Background()) {
 		err = cursor.Decode(&result)
 		if err != nil {
@@ -752,7 +755,5 @@ func GetNextSubpoolID(collection *mongo.Collection, stakingPoolId int) (int, err
 		}
 	}
 
-	fmt.Println("Highest subpoolID: ", result.MaxSubpoolID)
-
-	return result.MaxSubpoolID + 1, nil
+	return result.MaxSubpool + 1, nil
 }
