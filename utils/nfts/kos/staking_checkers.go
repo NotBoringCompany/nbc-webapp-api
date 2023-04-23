@@ -4,12 +4,135 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+/*
+For ALL staking pools, this function will get the staker from each active subpool and check whether the keys, keychain and/or superior keychain that they staked in each subpool are still owned by them.
+if not, the subpool will automatically be removed from `ActiveSubpools` and moved to `ClosedSubpools`, change Banned to true and impose a BannedData instance on the staker.
+*/
+func VerifyOwnership(collection *mongo.Collection) (bool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return false, errors.New("Collection must be RHStakingPool")
+	}
+
+	// we get the list of all subpools.
+	subpools, err := GetAllActiveSubpools(collection)
+	if err != nil {
+		return true, err // defaults to true if an error occurs
+	}
+
+	/// TO DO HERE!!
+}
+
+/*
+Gets all staking pools from `RHStakingPool` and returns them as a slice of `StakingPool` instances.
+*/
+func GetAllStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("Collection must be RHStakingPool") // defaults to false if an error occurs
+	}
+
+	// get ALL staking pools from `RHStakingPool` collection
+	var stakingPools []*models.StakingPool
+	cursor, err := collection.Find(context.Background(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(context.Background())
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return nil, err
+		}
+		stakingPools = append(stakingPools, &stakingPool)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return stakingPools, nil
+}
+
+/*
+Gets all active subpools from each staking pool in `RHStakingPool` and returns them as a slice of `StakingSubpool` instances.
+*/
+func GetAllActiveSubpools(collection *mongo.Collection) ([]*models.StakingSubpool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("Collection must be RHStakingPool")
+	}
+
+	// retrieve all staking pools
+	cursor, err := collection.Find(context.Background(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	// get all active subpools from each staking pool.
+	// we don't mind if a staking pool has no active subpools or that this `activeSubpools` has multiple subpools with the same ID (as its from different staking pools)
+	var activeSubpools []*models.StakingSubpool
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return nil, err
+		}
+		activeSubpools = append(activeSubpools, stakingPool.ActiveSubpools...)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return activeSubpools, nil
+}
+
+/*
+Gets all stakers from all active subpools in `RHStakingPool` and returns them as a slice of `Staker` instances.
+*/
+func GetStakersFromActiveSubpools(collection *mongo.Collection) ([]*models.Staker, error) {
+	// fetch all staking pools from `RHStakingPool` collection
+	var stakingPools []*models.StakingPool
+	cursor, err := collection.Find(context.Background(), bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return nil, err
+		}
+		stakingPools = append(stakingPools, &stakingPool)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	// interate over active subpools of each StakingPool and fetch the staker
+	var stakers []*models.Staker
+	for _, stakingPool := range stakingPools {
+		for _, subpool := range stakingPool.ActiveSubpools {
+			stakerObjId := subpool.Staker
+			var staker models.Staker
+			// get the RHStakerData collection, find and match the staker object ID, store in `staker` variable
+			err := configs.GetCollections(configs.DB, "RHStakerData").FindOne(context.Background(), bson.M{"_id": stakerObjId}).Decode(&staker)
+			if err != nil {
+				return nil, err
+			}
+			stakers = append(stakers, &staker)
+		}
+	}
+
+	return stakers, nil
+}
 
 /*
 Checks if the time now has passed the `StartTime` for Staking Pool ID `stakingPoolId`.
