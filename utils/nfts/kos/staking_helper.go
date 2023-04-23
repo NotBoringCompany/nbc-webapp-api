@@ -14,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 /*
@@ -77,9 +76,9 @@ func ClaimReward(collection *mongo.Collection, wallet string, stakingPoolId, sub
 	// reward claims only work if the subpool has been moved to `ClosedSubpools` (i.e. when the staking ends).
 	// stakers CANNOT claim early.
 	var subpool *models.StakingSubpool
-	for _, subpool := range stakingPool.ClosedSubpools {
-		if subpool.SubpoolID == subpoolId {
-			subpool = subpool
+	for _, closedSubpool := range stakingPool.ClosedSubpools {
+		if closedSubpool.SubpoolID == subpoolId {
+			subpool = closedSubpool
 			break
 		}
 	}
@@ -90,12 +89,16 @@ func ClaimReward(collection *mongo.Collection, wallet string, stakingPoolId, sub
 	}
 
 	// returns the Staker's Object ID for `wallet`. if it matches with the `Staker`'s Object ID in `RHStakingPool`, then the staker is valid.
-	stakerId, err := GetStakerInstance(collection, wallet)
+	stakerId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), wallet)
 	if err != nil {
 		return err
 	}
-	if stakerId != subpool.Staker {
-		return errors.New("staker for this subpool does not match wallet given.")
+
+	// convert the object IDs to hex strings since they are of type `primitive.ObjectID` struct.
+	if stakerId.Hex() != subpool.Staker.Hex() {
+		fmt.Println("Staker ID: ", stakerId)
+		fmt.Println("Subpool Staker ID: ", subpool.Staker)
+		return errors.New("staker for this subpool does not match wallet given")
 	}
 
 	// checks if Subppol is banned
@@ -118,7 +121,7 @@ func ClaimReward(collection *mongo.Collection, wallet string, stakingPoolId, sub
 			return err
 		}
 		// we now add the tokens to the staker's wallet.
-		err = AddTokensToStaker(collection, stakingPool.Reward.Name, wallet, tokensToGive)
+		err = AddTokensToStaker(configs.GetCollections(configs.DB, "RHStakerData"), stakingPool.Reward.Name, wallet, tokensToGive)
 		if err != nil {
 			return err
 		}
@@ -133,7 +136,7 @@ func ClaimReward(collection *mongo.Collection, wallet string, stakingPoolId, sub
 	} else {
 		// NOT IMPLEMENTED YET!
 		// this needs to be updated once non-token rewards are out.
-		return errors.New("non-token rewards are not implemented yet.")
+		return errors.New("non-token rewards are not implemented yet")
 	}
 }
 
@@ -147,15 +150,71 @@ func UpdateRewardClaimedToTrue(collection *mongo.Collection, stakingPoolId, subp
 	update := bson.M{"$set": bson.M{"closedSubpools.$.rewardClaimed": true}}
 
 	// update the `RewardClaimed` field to true.
-	result, err := collection.UpdateOne(context.Background(), filter, update)
+	_, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Updated document %v to set rewardClaimed to true (subpool ID: %v)", result.UpsertedID, subpoolId)
+	fmt.Printf("Updated subpool ID %d's (from staking pool ID %d) rewardClaimed field to true", subpoolId, stakingPoolId)
 	return nil
 }
 
+/*
+Shifts ALL `ActiveSubpools` to `ClosedSubpools` of ANY StakingPools when the staking period ends.
+*/
+func CloseSubpoolsOnStakeEnd(collection *mongo.Collection) error {
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	now := time.Now()
+
+	filter := bson.M{"endTime": bson.M{"$lte": now}}
+
+	// get all matching StakingPools
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.Background())
+
+	// iterate over the cursor and shift all subpools to `ClosedSubpools`.
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return err
+		}
+
+		// update all subpools in `ActiveSubpools` and move them over to `ClosedSubpools`.
+		for _, subpool := range stakingPool.ActiveSubpools {
+			subpool.ExitTime = now
+			stakingPool.ClosedSubpools = append(stakingPool.ClosedSubpools, subpool)
+
+			fmt.Printf("moved subpool %v from staking pool %v to closed subpools \n", subpool.SubpoolID, stakingPool.StakingPoolID)
+		}
+
+		// clear `ActiveSubpools` and update the document.
+		stakingPool.ActiveSubpools = nil
+
+		// update the StakingPool document.
+		result, err := collection.ReplaceOne(context.Background(), bson.M{"stakingPoolID": stakingPool.StakingPoolID}, stakingPool)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Updated staking pool %v and shifted all its active subpools to closed subpools", result.UpsertedID)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*
+AddTokensToStaker is a helper function that adds `tokensToGive` to the staker's wallet assuming all checks have passed beforehand.
+*/
 func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, tokensToGive float64) error {
 	if collection.Name() != "RHStakerData" {
 		return errors.New("collection must be RHStakerData")
@@ -167,7 +226,13 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 		return err
 	}
 
+	reward := &models.Reward{Name: rewardName, Amount: tokensToGive}
+
+	fmt.Printf("reward to give to staker: %v \n", reward)
+
 	if !exists {
+		fmt.Printf("staker with wallet %v does not exist. creating new staker... \n", wallet)
+
 		// add a new staker with the given wallet and add `tokensToGive` to the staker's wallet.
 		stakerObjId, err := AddStaker(collection, wallet)
 		if err != nil {
@@ -176,8 +241,6 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 
 		// add the tokens to the staker's wallet.
 		filter := bson.M{"_id": stakerObjId}
-
-		reward := &models.Reward{Name: rewardName, Amount: tokensToGive}
 
 		// since the new staker doesn't have the EarnedRewards field, we need to update it.
 		update := bson.M{
@@ -193,9 +256,9 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 
 		return nil
 	} else { // if the staker already exists, we first do multiple checks.
-		filter := bson.M{"wallet": wallet}
+		fmt.Printf("staker with wallet %v already exists. updating staker... \n", wallet)
 
-		reward := &models.Reward{Name: rewardName, Amount: tokensToGive}
+		filter := bson.M{"wallet": wallet}
 
 		// check if the staker already has an existing `earnedRewards` field.
 		var staker models.Staker
@@ -205,6 +268,7 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 		}
 
 		// if the staker already has an existing `earnedRewards` field, we just append the new reward to the existing `earnedRewards` field.
+		// otherwise, we need to update the `earnedRewards` field.
 		if staker.EarnedRewards == nil {
 			update := bson.M{
 				"$set": bson.M{
@@ -219,6 +283,8 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 
 			return nil
 		} else {
+			fmt.Printf("staker with wallet %v already has an existing `earnedRewards` field. checking if reward with name %v already exists... \n", wallet, rewardName)
+
 			// if the staker already has an existing `earnedRewards` field, we need to check if the reward with the same name already exists.
 			// if it does, we just add the amount to the existing reward.
 			// if it doesn't, we just append the new reward to the existing `earnedRewards` field.
@@ -302,25 +368,37 @@ func GetStakerInstance(collection *mongo.Collection, wallet string) (*primitive.
 }
 
 /*
-Gets the total subpool points accumulated for a subpool with ID `subpoolId` for a staking pool with ID `stakingPoolId`.
+Gets the subpool points accumulated for a subpool with ID `subpoolId` for a staking pool with ID `stakingPoolId`.
 */
 func GetAccSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpoolId int) (float64, error) {
 	if collection.Name() != "RHStakingPool" {
 		return 0, errors.New("collection must be RHStakingPool")
 	}
 
-	filter := bson.M{"stakingPoolID": stakingPoolId}
-	projection := bson.M{"activeSubpools": bson.M{"$elemMatch": bson.M{"subpoolID": subpoolId}}}
+	// filters through both active and closed subpools and gets the subpool with ID `subpoolId`.
+	filter := bson.D{
+		{"stakingPoolID", stakingPoolId},
+		{"$or", bson.A{
+			bson.D{{"activeSubpools.subpoolID", subpoolId}},
+			bson.D{{"closedSubpools.subpoolID", subpoolId}},
+		}},
+	}
 
 	var stakingPool models.StakingPool
-	if err := collection.FindOne(context.Background(), filter, options.FindOne().SetProjection(projection)).Decode(&stakingPool); err != nil {
+	if err := collection.FindOne(context.Background(), filter).Decode(&stakingPool); err != nil {
 		return 0, err
 	}
 
 	var subpoolPoints float64
 
-	// get the ActiveSubpool with ID `subpoolId` and its subpool points.
+	// Find the subpool with ID `subpoolId` and its subpool points.
 	for _, subpool := range stakingPool.ActiveSubpools {
+		if subpool.SubpoolID == subpoolId {
+			subpoolPoints = subpool.SubpoolPoints
+			break
+		}
+	}
+	for _, subpool := range stakingPool.ClosedSubpools {
 		if subpool.SubpoolID == subpoolId {
 			subpoolPoints = subpool.SubpoolPoints
 			break
@@ -331,37 +409,45 @@ func GetAccSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpoolId 
 }
 
 /*
-Gets the total subpool points accumulated across ALL subpools within a staking pool with ID `stakingPoolId`.
+Gets the total subpool points accumulated across ALL subpools (both active and closed) within a staking pool with ID `stakingPoolId`.
 */
 func GetTotalSubpoolPoints(collection *mongo.Collection, stakingPoolId int) (float64, error) {
 	if collection.Name() != "RHStakingPool" {
 		return 0, errors.New("collection must be RHStakingPool")
 	}
 
-	filter := bson.D{{"stakingPoolID", stakingPoolId}, {"activeSubpools", bson.M{"$exists": true, "$ne": nil}}}
+	// filters through both active and closed subpools.
+	filter := bson.D{
+		{"stakingPoolID", stakingPoolId},
+		{"$or", bson.A{
+			bson.M{"activeSubpools": bson.M{"$exists": true, "$ne": nil}},
+			bson.M{"closedSubpools": bson.M{"$exists": true, "$ne": nil}},
+		}},
+	}
 
 	var activeSubpools []*models.StakingSubpool
+	var closedSubpools []*models.StakingSubpool
 
 	cursor, err := collection.Find(context.Background(), filter)
 	if err != nil {
 		return 0, err
 	}
-
 	defer cursor.Close(context.Background())
+
 	for cursor.Next(context.Background()) {
 		var stakingPool models.StakingPool
 		if err := cursor.Decode(&stakingPool); err != nil {
 			return 0, err
 		}
 		activeSubpools = append(activeSubpools, stakingPool.ActiveSubpools...)
+		closedSubpools = append(closedSubpools, stakingPool.ClosedSubpools...)
 	}
-
 	if err := cursor.Err(); err != nil {
 		return 0, err
 	}
 
 	var totalSubpoolPoints float64
-	for _, subpool := range activeSubpools {
+	for _, subpool := range append(activeSubpools, closedSubpools...) {
 		totalSubpoolPoints += subpool.SubpoolPoints
 	}
 
@@ -397,6 +483,8 @@ func CalcSubpoolTokenShare(collection *mongo.Collection, stakingPoolId, subpoolI
 	// calculate the reward share for a specific subpool of ID `subpoolId` for a specific staking pool with ID `stakingPoolId`
 	rewardShare := math.Round(accSubpoolPoints/totalSubpoolPoints*totalTokenReward*100) / 100
 
+	fmt.Printf("Reward share for subpool %d of staking pool %d: %f\n", subpoolId, stakingPoolId, rewardShare)
+
 	return rewardShare, nil
 }
 
@@ -426,7 +514,7 @@ func GetTotalTokenReward(collection *mongo.Collection, stakingPoolId int) (float
 /*
 Adds a new staking pool to the RHStakingPool collection.
 */
-func AddStakingPool(collection *mongo.Collection, rewardName string, rewardAmount int) error {
+func AddStakingPool(collection *mongo.Collection, rewardName string, rewardAmount float64) error {
 	// collection must be RHStaking Pool.
 	if collection.Name() != "RHStakingPool" {
 		return errors.New("collection must be RHStakingPool")
@@ -636,11 +724,16 @@ func GetNextSubpoolID(collection *mongo.Collection, stakingPoolId int) (int, err
 		return 0, errors.New("collection must be RHStakingPool")
 	}
 
+	// finds the max subpool ID from the staking pool from both active and closed subpools.
 	pipeline := mongo.Pipeline{
-		bson.D{{Key: "$unwind", Value: "$activeSubpools"}},
+		bson.D{{Key: "$match", Value: bson.M{"stakingPoolID": stakingPoolId}}},
+		bson.D{{Key: "$project", Value: bson.M{
+			"allSubpools": bson.M{"$concatArrays": []interface{}{"$activeSubpools", "$closedSubpools"}},
+		}}},
+		bson.D{{Key: "$unwind", Value: "$allSubpools"}},
 		bson.D{{Key: "$group", Value: bson.D{
 			{Key: "_id", Value: "$_id"},
-			{Key: "maxSubpoolID", Value: bson.D{{Key: "$max", Value: "$activeSubpools.subpoolID"}}},
+			{Key: "maxSubpoolID", Value: bson.D{{Key: "$max", Value: "$allSubpools.subpoolID"}}},
 		}}},
 	}
 
