@@ -59,6 +59,211 @@ func AddStaker(collection *mongo.Collection, wallet string) (*primitive.ObjectID
 }
 
 /*
+Allows the staker to claim subpool `subpoolId`'s reward from staking pool `stakingPoolId`.
+Checks if the `wallet` given matches the staker's wallet.
+*/
+func ClaimReward(collection *mongo.Collection, wallet string, stakingPoolId, subpoolId int) error {
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+
+	var stakingPool models.StakingPool
+	if err := collection.FindOne(context.Background(), filter).Decode(&stakingPool); err != nil {
+		return err
+	}
+
+	// reward claims only work if the subpool has been moved to `ClosedSubpools` (i.e. when the staking ends).
+	// stakers CANNOT claim early.
+	var subpool *models.StakingSubpool
+	for _, subpool := range stakingPool.ClosedSubpools {
+		if subpool.SubpoolID == subpoolId {
+			subpool = subpool
+			break
+		}
+	}
+
+	// if `subpool` is nil, then the subpool with ID `subpoolId` does not exist in `ClosedSubpools`.
+	if subpool == nil {
+		return errors.New("subpool with given ID does not exist in ClosedSubpools")
+	}
+
+	// returns the Staker's Object ID for `wallet`. if it matches with the `Staker`'s Object ID in `RHStakingPool`, then the staker is valid.
+	stakerId, err := GetStakerInstance(collection, wallet)
+	if err != nil {
+		return err
+	}
+	if stakerId != subpool.Staker {
+		return errors.New("staker for this subpool does not match wallet given.")
+	}
+
+	// checks if Subppol is banned
+	if subpool.Banned {
+		return errors.New("subpool is banned from claiming rewards")
+	}
+
+	// checks if reward has been claimed.
+	if subpool.RewardClaimed {
+		return errors.New("reward has already been claimed")
+	}
+
+	// otherwise, we assume that any closed subpools that are NOT banned and doesn't have its reward claimed can have the rewards claimed.
+	// reason: a subpool can only be `closed` if 1. the staking period has ended, or 2. the subpool has been banned.
+	// we can now calculate the reward to be given to the staker.
+	// we check if the reward to give is tokens.
+	if strings.Contains(stakingPool.Reward.Name, "Token") {
+		tokensToGive, err := CalcSubpoolTokenShare(collection, stakingPoolId, subpoolId)
+		if err != nil {
+			return err
+		}
+		// we now add the tokens to the staker's wallet.
+		err = AddTokensToStaker(collection, stakingPool.Reward.Name, wallet, tokensToGive)
+		if err != nil {
+			return err
+		}
+
+		// we now update the `RewardClaimed` field to true.
+		err = UpdateRewardClaimedToTrue(collection, stakingPoolId, subpoolId)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	} else {
+		// NOT IMPLEMENTED YET!
+		// this needs to be updated once non-token rewards are out.
+		return errors.New("non-token rewards are not implemented yet.")
+	}
+}
+
+/*
+Updates a specific Subpool with ID `subpoolId` in Staking Pool `stakingPoolId`'s `RewardClaimed` field to true.
+This function does NOT check if `rewardClaimed` has been set to true already. this must be checked beforehand.
+*/
+func UpdateRewardClaimedToTrue(collection *mongo.Collection, stakingPoolId, subpoolId int) error {
+	filter := bson.M{"stakingPoolID": stakingPoolId, "closedSubpools.subpoolID": subpoolId}
+
+	update := bson.M{"$set": bson.M{"closedSubpools.$.rewardClaimed": true}}
+
+	// update the `RewardClaimed` field to true.
+	result, err := collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Updated document %v to set rewardClaimed to true (subpool ID: %v)", result.UpsertedID, subpoolId)
+	return nil
+}
+
+func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, tokensToGive float64) error {
+	if collection.Name() != "RHStakerData" {
+		return errors.New("collection must be RHStakerData")
+	}
+
+	// checks if `wallet` exists in RHStakerData. if it exists, return an error.
+	exists, err := CheckStakerExists(collection, wallet)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		// add a new staker with the given wallet and add `tokensToGive` to the staker's wallet.
+		stakerObjId, err := AddStaker(collection, wallet)
+		if err != nil {
+			return err
+		}
+
+		// add the tokens to the staker's wallet.
+		filter := bson.M{"_id": stakerObjId}
+
+		reward := &models.Reward{Name: rewardName, Amount: tokensToGive}
+
+		// since the new staker doesn't have the EarnedRewards field, we need to update it.
+		update := bson.M{
+			"$set": bson.M{
+				"earnedRewards": []*models.Reward{reward},
+			},
+		}
+
+		_, err = collection.UpdateOne(context.Background(), filter, update)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	} else { // if the staker already exists, we first do multiple checks.
+		filter := bson.M{"wallet": wallet}
+
+		reward := &models.Reward{Name: rewardName, Amount: tokensToGive}
+
+		// check if the staker already has an existing `earnedRewards` field.
+		var staker models.Staker
+		err := collection.FindOne(context.Background(), filter).Decode(&staker)
+		if err != nil {
+			return err
+		}
+
+		// if the staker already has an existing `earnedRewards` field, we just append the new reward to the existing `earnedRewards` field.
+		if staker.EarnedRewards == nil {
+			update := bson.M{
+				"$set": bson.M{
+					"earnedRewards": []*models.Reward{reward},
+				},
+			}
+
+			_, err = collection.UpdateOne(context.Background(), filter, update)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		} else {
+			// if the staker already has an existing `earnedRewards` field, we need to check if the reward with the same name already exists.
+			// if it does, we just add the amount to the existing reward.
+			// if it doesn't, we just append the new reward to the existing `earnedRewards` field.
+			for _, earnedReward := range staker.EarnedRewards {
+				if earnedReward.Name == rewardName {
+					earnedReward.Amount += tokensToGive
+
+					update := bson.M{
+						"$set": bson.M{
+							"earnedRewards": staker.EarnedRewards,
+						},
+					}
+
+					_, err = collection.UpdateOne(context.Background(), filter, update)
+					if err != nil {
+						return err
+					}
+
+					return nil
+				} else {
+					staker.EarnedRewards = append(staker.EarnedRewards, reward)
+
+					update := bson.M{
+						"$set": bson.M{
+							"earnedRewards": staker.EarnedRewards,
+						},
+					}
+
+					_, err = collection.UpdateOne(context.Background(), filter, update)
+					if err != nil {
+						return err
+					}
+
+					return nil
+				}
+			}
+		}
+
+	}
+
+	fmt.Printf("Successfully added %f tokens to %s's wallet.\n", tokensToGive, wallet)
+	return nil
+}
+
+/*
 Checks if a Staker instance with `wallet` exists in RHStakerData.
 */
 func CheckStakerExists(collection *mongo.Collection, wallet string) (bool, error) {
