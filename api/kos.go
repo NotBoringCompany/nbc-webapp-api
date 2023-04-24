@@ -56,7 +56,7 @@ func KOSOwnerIDs(address string) ([]*big.Int, error) {
 }
 
 /*
-`VerifyOwnership` is a scheduled function that checks that `address` still owns ANY of the mentioned `ids` for the KOS collection.
+`VerifyKOSOwnership` is a scheduled function that checks that `address` still owns ANY of the mentioned `ids` for the KOS collection.
 
 If even just one of the ids are no longer owned by `address`, this function returns false.
 
@@ -67,7 +67,7 @@ For multiple pools, this function should be called multiple times, each for each
 	`address` the EVM address of the owner
 	`ids` the token IDs to check
 */
-func VerifyOwnership(address string, ids []*big.Int) (bool, error) {
+func VerifyKOSOwnership(address string, ids []int) (bool, error) {
 	currentOwnedIds, err := KOSOwnerIDs(address)
 	fmt.Println("Current owned ids: ", currentOwnedIds)
 	if err != nil {
@@ -78,7 +78,7 @@ func VerifyOwnership(address string, ids []*big.Int) (bool, error) {
 		found := false
 		// check if `id` exists in `currentOwnedIds`. the moment one id is not owned, return false
 		for _, currentOwnedId := range currentOwnedIds {
-			if id.Cmp(currentOwnedId) == 0 {
+			if currentOwnedId.Cmp(big.NewInt(int64(id))) == 0 {
 				found = true
 				break
 			}

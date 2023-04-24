@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"nbc-backend-api-v2/api"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -16,18 +18,221 @@ import (
 For ALL staking pools, this function will get the staker from each active subpool and check whether the keys, keychain and/or superior keychain that they staked in each subpool are still owned by them.
 if not, the subpool will automatically be removed from `ActiveSubpools` and moved to `ClosedSubpools`, change Banned to true and impose a BannedData instance on the staker.
 */
-func VerifyOwnership(collection *mongo.Collection) (bool, error) {
+func VerifyStakerOwnership(collection *mongo.Collection) error {
 	if collection.Name() != "RHStakingPool" {
-		return false, errors.New("Collection must be RHStakingPool")
+		return errors.New("collection must be RHStakingPool")
 	}
 
 	// we get the list of all subpools.
 	subpools, err := GetAllActiveSubpools(collection)
 	if err != nil {
-		return true, err // defaults to true if an error occurs
+		return err
 	}
 
-	/// TO DO HERE!!
+	// loop through each subpool, get the staked keys, keychain and/or superior keychain and get the staker.
+	// then, check whether the staker still owns the keys, keychain and/or superior keychain.
+	for _, subpool := range subpools {
+		stakerData, err := GetStakerFromObjID(collection, subpool.Staker)
+		if err != nil {
+			return err
+		}
+
+		// check whether the staker still owns the keys, keychain and/or superior keychain.
+		// if not, remove the subpool from `ActiveSubpools` and move it to `ClosedSubpools`, change Banned to true and impose a BannedData instance on the staker.
+		// if yes, do nothing.
+		if subpool.StakedKeys != nil {
+			var stakedKeyIds []int
+			// get the token IDs of the staked keys
+			for _, key := range subpool.StakedKeys {
+				stakedKeyIds = append(stakedKeyIds, key.TokenID)
+			}
+
+			// check whether the staker still owns the staked keys
+			stillOwned, err := api.VerifyKOSOwnership(stakerData.Wallet, stakedKeyIds)
+			if err != nil {
+				return err
+			}
+			if !stillOwned {
+				// first, ban the subpool.
+				err := BanSubpool(collection, subpool.StakingPoolID, subpool.SubpoolID)
+				if err != nil {
+					return err
+				}
+
+				// and then, impose a BannedData instance on the staker.
+				err = UpdateStakerBannedData(collection, subpool.Staker)
+				if err != nil {
+					return err
+				}
+
+				fmt.Printf("verifying complete. staker does NOT own at least one of the staked keys anymore. ban imposed.")
+				return nil
+			}
+		}
+
+		// check whether the staker still owns the keychain
+		// if a keychain is staked, the keychain id is not -1 or 0.
+		if subpool.StakedKeychainID != -1 && subpool.StakedKeychainID != 0 {
+			stillOwned, err := api.VerifyKeychainOwnership(stakerData.Wallet, []int{subpool.StakedKeychainID})
+			if err != nil {
+				return err
+			}
+
+			// if the staker does not own the keychain anymore, ban the subpool and impose a BannedData instance on the staker.
+			if !stillOwned {
+				// first, ban the subpool.
+				err := BanSubpool(collection, subpool.StakingPoolID, subpool.SubpoolID)
+				if err != nil {
+					return err
+				}
+
+				// and then, impose a BannedData instance on the staker.
+				err = UpdateStakerBannedData(collection, subpool.Staker)
+				if err != nil {
+					return err
+				}
+
+				fmt.Printf("verifying complete. staker does NOT own the staked keychain anymore. ban imposed.")
+				return nil
+			}
+		}
+
+		// check whether the staker still owns the superior keychain
+		// if a superior keychain is staked, the superior keychain id is not -1 or 0.
+		if subpool.StakedSuperiorKeychainID != -1 && subpool.StakedSuperiorKeychainID != 0 {
+			stillOwned, err := api.VerifySuperiorKeychainOwnership(stakerData.Wallet, []int{subpool.StakedSuperiorKeychainID})
+			if err != nil {
+				return err
+			}
+
+			// if the staker does not own the superior keychain anymore, ban the subpool and impose a BannedData instance on the staker.
+			if !stillOwned {
+				// first, ban the subpool.
+				err := BanSubpool(collection, subpool.StakingPoolID, subpool.SubpoolID)
+				if err != nil {
+					return err
+				}
+
+				// and then, impose a BannedData instance on the staker.
+				err = UpdateStakerBannedData(collection, subpool.Staker)
+				if err != nil {
+					return err
+				}
+
+				fmt.Printf("verifying complete. staker does NOT own the staked superior keychain anymore. ban imposed.")
+				return nil
+			}
+		}
+
+		fmt.Printf("verifying complete. staker still owns all staked items for subpool %d of staking pool %d", subpool.SubpoolID, subpool.StakingPoolID)
+	}
+
+	return nil
+}
+
+/*
+Bans a subpool from being able to claim rewards, removes it from `ActiveSubpools` and moves it to `ClosedSubpools`.
+if the subpool is already in `ClosedSubpools` (i.e. not in ActiveSubpools), this function will return an error.
+*/
+func BanSubpool(collection *mongo.Collection, stakingPoolId, subpoolId int) error {
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+
+	var stakingPool models.StakingPool
+	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return err
+	}
+
+	for i, subpool := range stakingPool.ActiveSubpools {
+		if subpool.SubpoolID == subpoolId {
+			// change the subpool's Banned to true
+			subpool.Banned = true
+
+			// remove the subpool from the `ActiveSubpools` slice
+			stakingPool.ActiveSubpools = append(stakingPool.ActiveSubpools[:i], stakingPool.ActiveSubpools[i+1:]...)
+
+			// add the subpool to the `ClosedSubpools` slice
+			stakingPool.ClosedSubpools = append(stakingPool.ClosedSubpools, subpool)
+
+			// update the stakingpool in the database
+			_, err := collection.ReplaceOne(context.Background(), bson.M{"_id": stakingPool.ID}, stakingPool)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("subpool %d has been banned from staking pool %d", subpoolId, stakingPoolId)
+			return nil
+		}
+	}
+
+	return errors.New("subpool not found in active subpools")
+}
+
+/*
+If a subpool gets banned, then the staker will be imposed a ban penalty.
+In this case, it checks if the staker already has a BannedData instance. if not, it creates one.
+*/
+func UpdateStakerBannedData(collection *mongo.Collection, stakerId *primitive.ObjectID) error {
+	if collection.Name() != "RHStakerData" {
+		return errors.New("collection must be RHStakerData")
+	}
+
+	// check if the staker already has a BannedData instance
+	filter := bson.M{"_id": stakerId}
+	var staker models.Staker
+
+	err := collection.FindOne(context.Background(), filter).Decode(&staker)
+	if err != nil {
+		return err
+	}
+
+	// if staker already has a BannedData instance, we first update the LastBanTime to now.
+	if staker.BannedData != nil {
+		// update the LastBanTime to now
+		staker.BannedData.LastBanTime = time.Now()
+
+		// update current unban time based on bannedcount
+		switch staker.BannedData.BannedCount {
+		case 1:
+			staker.BannedData.CurrentUnbanTime = time.Now().AddDate(0, 0, 7) // 7 day ban if banned once prior to this
+		case 2, 3:
+			staker.BannedData.CurrentUnbanTime = time.Now().AddDate(0, 0, 14) // 14 day ban if banned 2 or 3 times
+		default:
+			staker.BannedData.CurrentUnbanTime = time.Now().AddDate(0, 0, 30) // 30 day ban if banned 4 or more times
+		}
+
+		// update banned count by 1
+		staker.BannedData.BannedCount++
+
+		// update the staker in the database
+		_, err := collection.UpdateOne(context.Background(), bson.M{"_id": stakerId}, bson.M{"$set": bson.M{"bannedData": staker.BannedData}})
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("banned staker %s. they have been banned %d times thus far", stakerId.Hex(), staker.BannedData.BannedCount)
+	} else { // if staker does not have a BannedData instance, we create one and set the LastBanTime to now.
+		bannedData := &models.BannedData{
+			BannedCount:      1,
+			LastBanTime:      time.Now(),
+			CurrentUnbanTime: time.Now().AddDate(0, 0, 7), // 7 day ban
+		}
+
+		// update the staker in the database
+		_, err = collection.UpdateOne(context.Background(), bson.M{"_id": stakerId}, bson.M{"$set": bson.M{"bannedData": bannedData}})
+		if err != nil {
+			return fmt.Errorf("failed to create staker banned data: %s", err)
+		}
+
+		fmt.Printf("created ban instance and banned staker %s. they have been banned %d times thus far", stakerId.Hex(), staker.BannedData.BannedCount)
+		return nil
+	}
+
+	return nil
 }
 
 /*
@@ -35,7 +240,7 @@ Gets all staking pools from `RHStakingPool` and returns them as a slice of `Stak
 */
 func GetAllStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
 	if collection.Name() != "RHStakingPool" {
-		return nil, errors.New("Collection must be RHStakingPool") // defaults to false if an error occurs
+		return nil, errors.New("collection must be RHStakingPool") // defaults to false if an error occurs
 	}
 
 	// get ALL staking pools from `RHStakingPool` collection
@@ -63,7 +268,7 @@ func GetAllStakingPools(collection *mongo.Collection) ([]*models.StakingPool, er
 /*
 Gets all active subpools from each staking pool in `RHStakingPool` and returns them as a slice of `StakingSubpool` instances.
 */
-func GetAllActiveSubpools(collection *mongo.Collection) ([]*models.StakingSubpool, error) {
+func GetAllActiveSubpools(collection *mongo.Collection) ([]*models.StakingSubpoolWithID, error) {
 	if collection.Name() != "RHStakingPool" {
 		return nil, errors.New("Collection must be RHStakingPool")
 	}
@@ -77,13 +282,19 @@ func GetAllActiveSubpools(collection *mongo.Collection) ([]*models.StakingSubpoo
 
 	// get all active subpools from each staking pool.
 	// we don't mind if a staking pool has no active subpools or that this `activeSubpools` has multiple subpools with the same ID (as its from different staking pools)
-	var activeSubpools []*models.StakingSubpool
+	var activeSubpools []*models.StakingSubpoolWithID
 	for cursor.Next(context.Background()) {
 		var stakingPool models.StakingPool
 		if err := cursor.Decode(&stakingPool); err != nil {
 			return nil, err
 		}
-		activeSubpools = append(activeSubpools, stakingPool.ActiveSubpools...)
+
+		for _, subpool := range stakingPool.ActiveSubpools {
+			activeSubpools = append(activeSubpools, &models.StakingSubpoolWithID{
+				StakingPoolID:  stakingPool.StakingPoolID,
+				StakingSubpool: subpool,
+			})
+		}
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -91,6 +302,23 @@ func GetAllActiveSubpools(collection *mongo.Collection) ([]*models.StakingSubpoo
 	}
 
 	return activeSubpools, nil
+}
+
+/*
+Gets Staker Data from `RHStakerData` collection using the staker's object ID.
+*/
+func GetStakerFromObjID(collection *mongo.Collection, stakerObjId *primitive.ObjectID) (*models.Staker, error) {
+	if collection.Name() != "RHStakerData" {
+		return nil, errors.New("Collection must be RHStakerData")
+	}
+
+	var staker models.Staker
+	err := collection.FindOne(context.Background(), bson.M{"_id": stakerObjId}).Decode(&staker)
+	if err != nil {
+		return nil, err
+	}
+
+	return &staker, nil
 }
 
 /*

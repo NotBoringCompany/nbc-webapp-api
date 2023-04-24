@@ -34,7 +34,7 @@ func main() {
 	// scheduler.StartAsync()
 
 	app.Get("/test", func(c *fiber.Ctx) error {
-		data, err := api.SuperiorKeychainOwnerIDs("0x8FbFE537A211d81F90774EE7002ff784E352024a")
+		data, err := api.KOSOwnerIDs("0xb3bf8cd8Ba8BD013F4C318ED3C75C3f154a502fA")
 		if err != nil {
 			return c.SendString(err.Error())
 		}
@@ -62,6 +62,16 @@ func main() {
 		return c.JSON(id)
 	})
 
+	app.Get("/verifyOwnership", func(c *fiber.Ctx) error {
+		ids := []int{27, 703, 1283}
+		verified, err := api.VerifyKOSOwnership("0xb3bf8cd8Ba8BD013F4C318ED3C75C3f154a502fA", ids)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(verified)
+	})
+
 	app.Get("/testAddStakingPool", func(c *fiber.Ctx) error {
 		err := UtilsKOS.AddStakingPool(configs.GetCollections(configs.DB, "RHStakingPool"), "REC", 500000)
 
@@ -74,7 +84,7 @@ func main() {
 
 	app.Get("/testAddSubpool", func(c *fiber.Ctx) error {
 		metadata1 := &models.KOSSimplifiedMetadata{
-			TokenID:        5,
+			TokenID:        1,
 			HouseTrait:     "Glory",
 			TypeTrait:      "Electric",
 			LuckTrait:      55,
@@ -82,7 +92,7 @@ func main() {
 		}
 
 		metadata2 := &models.KOSSimplifiedMetadata{
-			TokenID:        6,
+			TokenID:        2,
 			HouseTrait:     "Chaos",
 			TypeTrait:      "Electric",
 			LuckTrait:      23,
@@ -90,7 +100,7 @@ func main() {
 		}
 
 		arr := []*models.KOSSimplifiedMetadata{metadata1, metadata2}
-		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 1, "0x8FbFE537A211d81F90774EE7002ff784E352024a", arr, -1, 4)
+		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 2, "0x8FbFE537A211d81F90774EE7002ff784E352024a", arr, -1, 3)
 		if err != nil {
 			return c.SendString(err.Error())
 		}
@@ -186,6 +196,24 @@ func main() {
 		}
 
 		return c.SendString("Success")
+	})
+
+	// app.Get("/banSubpool", func(c *fiber.Ctx) error {
+	// 	err := UtilsKOS.BanSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), )
+	// 	if err != nil {
+	// 		return c.SendString(err.Error())
+	// 	}
+
+	// 	return c.SendString("Success")
+	// })
+
+	app.Get("/allActiveSubpools", func(c *fiber.Ctx) error {
+		subpools, err := UtilsKOS.GetAllActiveSubpools(configs.GetCollections(configs.DB, "RHStakingPool"))
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(subpools)
 	})
 
 	// app.Get("/testAddStaker", func(c *fiber.Ctx) error {
