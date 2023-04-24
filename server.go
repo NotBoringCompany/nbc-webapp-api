@@ -216,6 +216,15 @@ func main() {
 		return c.JSON(subpools)
 	})
 
+	app.Get("/verifyStakerOwnership", func(c *fiber.Ctx) error {
+		err := UtilsKOS.VerifyStakerOwnership(configs.GetCollections(configs.DB, "RHStakingPool"))
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON("Success")
+	})
+
 	// app.Get("/testAddStaker", func(c *fiber.Ctx) error {
 	// 	err := UtilsKOS.AddStaker(configs.GetCollections(configs.DB, "RHStakerData"), "0xbc01Db6ea15c344529159F9c9D8eAb37C130a3bE")
 	// 	if err != nil {
