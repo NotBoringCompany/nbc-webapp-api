@@ -368,6 +368,219 @@ func GetStakerInstance(collection *mongo.Collection, wallet string) (*primitive.
 }
 
 /*
+If a subpool gets banned, then the staker will be imposed a ban penalty.
+In this case, it checks if the staker already has a BannedData instance. if not, it creates one.
+*/
+func UpdateStakerBannedData(collection *mongo.Collection, stakerId *primitive.ObjectID) error {
+	if collection.Name() != "RHStakerData" {
+		return errors.New("collection must be RHStakerData")
+	}
+
+	// check if the staker already has a BannedData instance
+	filter := bson.M{"_id": stakerId}
+	var staker models.Staker
+
+	err := collection.FindOne(context.Background(), filter).Decode(&staker)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("this part works here!")
+
+	// if staker already has a BannedData instance, we first update the LastBanTime to now.
+	if staker.BannedData != nil {
+		// update the LastBanTime to now
+		staker.BannedData.LastBanTime = time.Now()
+
+		// update current unban time based on bannedcount
+		switch staker.BannedData.BannedCount {
+		case 1:
+			staker.BannedData.CurrentUnbanTime = time.Now().AddDate(0, 0, 7) // 7 day ban if banned once prior to this
+		case 2, 3:
+			staker.BannedData.CurrentUnbanTime = time.Now().AddDate(0, 0, 14) // 14 day ban if banned 2 or 3 times
+		default:
+			staker.BannedData.CurrentUnbanTime = time.Now().AddDate(0, 0, 30) // 30 day ban if banned 4 or more times
+		}
+
+		// update banned count by 1
+		staker.BannedData.BannedCount++
+
+		// update the staker in the database
+		_, err := collection.UpdateOne(context.Background(), bson.M{"_id": stakerId}, bson.M{"$set": bson.M{"bannedData": staker.BannedData}})
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("banned staker %s. they have been banned %d times thus far", stakerId.Hex(), staker.BannedData.BannedCount)
+	} else { // if staker does not have a BannedData instance, we create one and set the LastBanTime to now.
+		// create a new BannedData instance
+		bannedData := &models.BannedData{
+			BannedCount:      1,
+			LastBanTime:      time.Now(),
+			CurrentUnbanTime: time.Now().AddDate(0, 0, 7), // 7 day ban
+		}
+
+		// update the staker in the database
+		_, err = collection.UpdateOne(context.Background(), bson.M{"_id": stakerId}, bson.M{"$set": bson.M{"bannedData": bannedData}})
+		if err != nil {
+			return fmt.Errorf("failed to create staker banned data: %s", err)
+		}
+
+		fmt.Printf("created ban instance and banned staker %s. they have been banned %d times thus far", stakerId.Hex(), bannedData.BannedCount)
+
+		return nil
+	}
+
+	return nil
+}
+
+/*
+Allows a staker to unstake from a subpool with `subpoolId` from a staking pool with `stakingPoolId`.
+This assumes that the subpool is part of the `ActiveSubpools`. Closed subpools cannot be `unstaked` from.
+
+Unstaking only is allowed if the time now has NOT passed the `startTime` of the staking pool yet.
+*/
+func UnstakeFromSubpool(collection *mongo.Collection, stakingPoolId, subpoolId int) error {
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	// check if now is past the startTime of the staking pool
+	startTime, err := GetStartTimeOfStakingPool(collection, stakingPoolId)
+	if err != nil {
+		return err
+	}
+	if time.Now().After(startTime) {
+		return errors.New("cannot unstake from a subpool after the staking pool has started")
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	update := bson.M{
+		"$pull": bson.M{
+			"activeSubpools": bson.M{"subpoolID": subpoolId},
+		},
+	}
+
+	result, err := collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.ModifiedCount == 0 {
+		return fmt.Errorf("no subpool with ID %d exists in the ActiveSubpools of staking pool %d", subpoolId, stakingPoolId)
+	}
+
+	fmt.Printf("unstaked subpool %d from staking pool %d", subpoolId, stakingPoolId)
+	return nil
+}
+
+/*
+Allows a staker to unstake from all subpools from a staking pool with `stakingPoolId`.
+This assumes that the subpools are part of the `ActiveSubpools`. Closed subpools cannot be `unstaked` from.
+
+Unstaking only is allowed if the time now has NOT passed the `startTime` of the staking pool yet.
+*/
+func UnstakeFromStakingPool(collection *mongo.Collection, stakingPoolId int, stakerWallet string) error {
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	// check if now is past the startTime of the staking pool
+	startTime, err := GetStartTimeOfStakingPool(collection, stakingPoolId)
+	if err != nil {
+		return err
+	}
+	if time.Now().After(startTime) {
+		return errors.New("cannot unstake from a subpool after the staking pool has started")
+	}
+
+	// get the object ID based on the wallet
+	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	update := bson.M{
+		"$pull": bson.M{
+			"activeSubpools": bson.M{"staker": stakerObjId},
+		},
+	}
+
+	result, err := collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.ModifiedCount == 0 {
+		return fmt.Errorf("no subpool exists for staker with wallet %s in staking pool %d", stakerWallet, stakingPoolId)
+	}
+
+	fmt.Printf("unstaked all subpools for staker %s from staking pool %d", stakerWallet, stakingPoolId)
+	return nil
+}
+
+/*
+Gets the start time of a staking pool.
+*/
+func GetStartTimeOfStakingPool(collection *mongo.Collection, stakingPoolId int) (time.Time, error) {
+	if collection.Name() != "RHStakingPool" {
+		return time.Time{}, errors.New("collection must be RHStakingPool")
+	}
+
+	var stakingPool models.StakingPool
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return stakingPool.StartTime, nil
+}
+
+/*
+Bans a subpool from being able to claim rewards, removes it from `ActiveSubpools` and moves it to `ClosedSubpools`.
+if the subpool is already in `ClosedSubpools` (i.e. not in ActiveSubpools), this function will return an error.
+*/
+func BanSubpool(collection *mongo.Collection, stakingPoolId, subpoolId int) error {
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+
+	var stakingPool models.StakingPool
+	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return err
+	}
+
+	for i, subpool := range stakingPool.ActiveSubpools {
+		if subpool.SubpoolID == subpoolId {
+			// change the subpool's Banned to true
+			subpool.Banned = true
+
+			// remove the subpool from the `ActiveSubpools` slice
+			stakingPool.ActiveSubpools = append(stakingPool.ActiveSubpools[:i], stakingPool.ActiveSubpools[i+1:]...)
+
+			// add the subpool to the `ClosedSubpools` slice
+			stakingPool.ClosedSubpools = append(stakingPool.ClosedSubpools, subpool)
+
+			// update the stakingpool in the database
+			_, err := collection.ReplaceOne(context.Background(), bson.M{"_id": stakingPool.ID}, stakingPool)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("subpool %d has been banned from staking pool %d", subpoolId, stakingPoolId)
+			return nil
+		}
+	}
+
+	return errors.New("subpool not found in active subpools")
+}
+
+/*
 Gets the subpool points accumulated for a subpool with ID `subpoolId` for a staking pool with ID `stakingPoolId`.
 */
 func GetAccSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpoolId int) (float64, error) {
@@ -455,60 +668,259 @@ func GetTotalSubpoolPoints(collection *mongo.Collection, stakingPoolId int) (flo
 }
 
 /*
-ONLY FOR TOKEN REWARDS: calculate the reward share for a specific subpool of ID `subpoolId` for a staking pool with ID `stakingPoolId`.
+Gets all staking pools from `RHStakingPool` and returns them as a slice of `StakingPool` instances.
 */
-func CalcSubpoolTokenShare(collection *mongo.Collection, stakingPoolId, subpoolId int) (float64, error) {
+func GetAllStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
 	if collection.Name() != "RHStakingPool" {
-		return 0, errors.New("collection must be RHStakingPool")
+		return nil, errors.New("collection must be RHStakingPool") // defaults to false if an error occurs
 	}
 
-	// fetch the accumulated subpool points for a specific subpool of ID `subpoolId` for a specific staking pool with ID `stakingPoolId`
-	accSubpoolPoints, err := GetAccSubpoolPoints(collection, stakingPoolId, subpoolId)
+	// get ALL staking pools from `RHStakingPool` collection
+	var stakingPools []*models.StakingPool
+	cursor, err := collection.Find(context.Background(), bson.D{})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	// fetch the total subpool points across ALL subpools for a specific staking pool with ID `stakingPoolId`
-	totalSubpoolPoints, err := GetTotalSubpoolPoints(collection, stakingPoolId)
-	if err != nil {
-		return 0, err
+	defer cursor.Close(context.Background())
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return nil, err
+		}
+		stakingPools = append(stakingPools, &stakingPool)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
 	}
 
-	// fetch the total token reward for the staking pool
-	totalTokenReward, err := GetTotalTokenReward(collection, stakingPoolId)
-	if err != nil {
-		return 0, err
-	}
-
-	// calculate the reward share for a specific subpool of ID `subpoolId` for a specific staking pool with ID `stakingPoolId`
-	rewardShare := math.Round(accSubpoolPoints/totalSubpoolPoints*totalTokenReward*100) / 100
-
-	fmt.Printf("Reward share for subpool %d of staking pool %d: %f\n", subpoolId, stakingPoolId, rewardShare)
-
-	return rewardShare, nil
+	return stakingPools, nil
 }
 
 /*
-ONLY FOR TOKEN REWARDS: gets the total token reward for a staking pool with ID `stakingPoolId`.
+Gets all active subpools from each staking pool in `RHStakingPool` and returns them as a slice of `StakingSubpool` instances.
 */
-func GetTotalTokenReward(collection *mongo.Collection, stakingPoolId int) (float64, error) {
+func GetAllActiveSubpools(collection *mongo.Collection) ([]*models.StakingSubpoolWithID, error) {
 	if collection.Name() != "RHStakingPool" {
-		return 0, errors.New("collection must be RHStakingPool")
+		return nil, errors.New("collection must be RHStakingPool")
 	}
 
-	filter := bson.M{"stakingPoolID": stakingPoolId}
+	// retrieve all staking pools
+	cursor, err := collection.Find(context.Background(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
 
-	var stakingPool models.StakingPool
-	if err := collection.FindOne(context.Background(), filter).Decode(&stakingPool); err != nil {
-		return 0, err
+	// get all active subpools from each staking pool.
+	// we don't mind if a staking pool has no active subpools or that this `activeSubpools` has multiple subpools with the same ID (as its from different staking pools)
+	var activeSubpools []*models.StakingSubpoolWithID
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return nil, err
+		}
+
+		for _, subpool := range stakingPool.ActiveSubpools {
+			activeSubpools = append(activeSubpools, &models.StakingSubpoolWithID{
+				StakingPoolID:  stakingPool.StakingPoolID,
+				StakingSubpool: subpool,
+			})
+		}
 	}
 
-	reward := stakingPool.Reward
-	if !strings.Contains(reward.Name, "Token") {
-		return 0, errors.New("reward must be a token") // reward must be a token, or else there is no total token reward
+	if err := cursor.Err(); err != nil {
+		return nil, err
 	}
 
-	return float64(reward.Amount), nil
+	return activeSubpools, nil
+}
+
+/*
+Gets Staker Data from `RHStakerData` collection using the staker's object ID.
+*/
+func GetStakerFromObjID(collection *mongo.Collection, stakerObjId *primitive.ObjectID) (*models.Staker, error) {
+	if collection.Name() != "RHStakerData" {
+		return nil, errors.New("Collection must be RHStakerData")
+	}
+
+	var staker models.Staker
+	err := collection.FindOne(context.Background(), bson.M{"_id": stakerObjId}).Decode(&staker)
+	if err != nil {
+		return nil, err
+	}
+
+	return &staker, nil
+}
+
+/*
+Gets all stakers from all active subpools in `RHStakingPool` and returns them as a slice of `Staker` instances.
+*/
+func GetStakersFromActiveSubpools(collection *mongo.Collection) ([]*models.Staker, error) {
+	// fetch all staking pools from `RHStakingPool` collection
+	var stakingPools []*models.StakingPool
+	cursor, err := collection.Find(context.Background(), bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return nil, err
+		}
+		stakingPools = append(stakingPools, &stakingPool)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	// interate over active subpools of each StakingPool and fetch the staker
+	var stakers []*models.Staker
+	for _, stakingPool := range stakingPools {
+		for _, subpool := range stakingPool.ActiveSubpools {
+			stakerObjId := subpool.Staker
+			var staker models.Staker
+			// get the RHStakerData collection, find and match the staker object ID, store in `staker` variable
+			err := configs.GetCollections(configs.DB, "RHStakerData").FindOne(context.Background(), bson.M{"_id": stakerObjId}).Decode(&staker)
+			if err != nil {
+				return nil, err
+			}
+			stakers = append(stakers, &staker)
+		}
+	}
+
+	return stakers, nil
+}
+
+/*
+Gets all the key IDs that have been staked in a specific staking pool.
+*/
+func GetAllStakedKeyIDs(collection *mongo.Collection, stakingPoolId int) ([]int, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("invalid collection name")
+	}
+
+	pipeline := mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"stakingPoolID", stakingPoolId}}}},              // match the staking pool ID with `stakingPoolId`
+		bson.D{{"$unwind", "$activeSubpools"}},                                    // unwinds the activeSubpools array to get separate document for each `Subpool` in the array
+		bson.D{{"$unwind", "$activeSubpools.stakedKeys"}},                         // unwinds the stakedKeys array to get separate document for each `StakedKey` in the array
+		bson.D{{"$group", bson.D{{"_id", "$activeSubpools.stakedKeys.tokenID"}}}}, // groups the documents by the TokenID field
+		bson.D{{"$project", bson.D{{"_id", 0}, {"TokenID", "$_id"}}}},             // only project the TokenID field
+	}
+
+	cursor, err := collection.Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	var tokenIDs []int
+	for cursor.Next(context.Background()) {
+		var result struct {
+			TokenID int `bson:"TokenID"`
+		}
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+		tokenIDs = append(tokenIDs, result.TokenID)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(context.Background())
+
+	return tokenIDs, nil
+}
+
+/*
+Gets all the keychain IDs that have been staked in a specific staking pool.
+*/
+func GetAllStakedKeychainIDs(collection *mongo.Collection, stakingPoolId int) ([]int, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("invalid collection name")
+	}
+
+	pipeline := mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"stakingPoolID", stakingPoolId}}}},                                       // match documents with stakingPoolID equal to 1
+		bson.D{{"$unwind", "$activeSubpools"}},                                                             // unwind the activeSubpools array to get separate document for each subpool
+		bson.D{{"$match", bson.D{{"activeSubpools.stakedKeychainId", bson.D{{"$ne", -1}}}}}},               // exclude subpools with stakedKeychainId equal to -1
+		bson.D{{"$project", bson.D{{"_id", 0}, {"stakedKeychainId", "$activeSubpools.stakedKeychainId"}}}}, // project only the stakedKeychainId
+	}
+
+	cursor, err := collection.Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(context.Background())
+
+	var keychainIDs []int
+	for cursor.Next(context.Background()) {
+		var result struct {
+			StakedKeychainID int `bson:"stakedKeychainId"`
+		}
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+
+		keychainIDs = append(keychainIDs, result.StakedKeychainID)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(context.Background())
+
+	return keychainIDs, nil
+}
+
+/*
+Gets all the superior keychain IDs that have been staked in a specific staking pool.
+*/
+func GetAllStakedSuperiorKeychainIDs(collection *mongo.Collection, stakingPoolId int) ([]int, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("invalid collection name")
+	}
+
+	pipeline := mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"stakingPoolID", stakingPoolId}}}},                                 // match the staking pool ID with `1`
+		bson.D{{"$unwind", "$activeSubpools"}},                                                       // unwinds the activeSubpools array to get separate document for each `Subpool` in the array
+		bson.D{{"$match", bson.D{{"activeSubpools.stakedSuperiorKeychainId", bson.D{{"$ne", -1}}}}}}, // filter out documents where `stakedSuperiorKeychainId` is `-1`
+		bson.D{{"$project", bson.D{{"_id", 0}, {"stakedSuperiorKeychainId", "$activeSubpools.stakedSuperiorKeychainId"}}}},
+	}
+
+	cursor, err := collection.Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(context.Background())
+
+	fmt.Println(cursor)
+
+	var superiorKeychainIDs []int
+	for cursor.Next(context.Background()) {
+		var result struct {
+			StakedSuperiorKeychainID int `bson:"stakedSuperiorKeychainId"`
+		}
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+
+		superiorKeychainIDs = append(superiorKeychainIDs, result.StakedSuperiorKeychainID)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(context.Background())
+
+	return superiorKeychainIDs, nil
 }
 
 /*
@@ -583,7 +995,7 @@ func AddSubpool(
 	}
 
 	// check if the staker is banned.
-	banned, err := CheckIfStakerBanned(collection, stakerWallet)
+	banned, err := CheckIfStakerBanned(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
 	if err != nil {
 		return err
 	}

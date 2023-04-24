@@ -84,7 +84,7 @@ func main() {
 
 	app.Get("/testAddSubpool", func(c *fiber.Ctx) error {
 		metadata1 := &models.KOSSimplifiedMetadata{
-			TokenID:        1,
+			TokenID:        5,
 			HouseTrait:     "Glory",
 			TypeTrait:      "Electric",
 			LuckTrait:      55,
@@ -92,7 +92,7 @@ func main() {
 		}
 
 		metadata2 := &models.KOSSimplifiedMetadata{
-			TokenID:        2,
+			TokenID:        6,
 			HouseTrait:     "Chaos",
 			TypeTrait:      "Electric",
 			LuckTrait:      23,
@@ -100,12 +100,39 @@ func main() {
 		}
 
 		arr := []*models.KOSSimplifiedMetadata{metadata1, metadata2}
-		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 2, "0x8FbFE537A211d81F90774EE7002ff784E352024a", arr, -1, 3)
+		err := UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 2, "0x8FbFE537A211d81F90774EE7002ff784E352024a", arr, -1, 5)
 		if err != nil {
 			return c.SendString(err.Error())
 		}
 
 		return c.SendString("Success")
+	})
+
+	app.Get("/getAllStakedKeyIDs", func(c *fiber.Ctx) error {
+		keyIds, err := UtilsKOS.GetAllStakedKeyIDs(configs.GetCollections(configs.DB, "RHStakingPool"), 2)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(keyIds)
+	})
+
+	app.Get("/checkSuperiorKeychainStaked", func(c *fiber.Ctx) error {
+		staked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), 2, 3)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(staked)
+	})
+
+	app.Get("/getAllStakedSuperiorKeychainIDs", func(c *fiber.Ctx) error {
+		keychainIds, err := UtilsKOS.GetAllStakedSuperiorKeychainIDs(configs.GetCollections(configs.DB, "RHStakingPool"), 2)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(keychainIds)
 	})
 
 	app.Get("/getHighestSubpoolID", func(c *fiber.Ctx) error {
@@ -232,6 +259,24 @@ func main() {
 		}
 
 		return c.JSON(banned)
+	})
+
+	app.Get("/unstakeFromPool", func(c *fiber.Ctx) error {
+		err := UtilsKOS.UnstakeFromSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), 2, 2)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON("Success")
+	})
+
+	app.Get("/unstakeFromStakingPool", func(c *fiber.Ctx) error {
+		err := UtilsKOS.UnstakeFromStakingPool(configs.GetCollections(configs.DB, "RHStakingPool"), 2, "0x8FbFE537A211d81F90774EE7002ff784E352024a")
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON("Success")
 	})
 
 	// app.Get("/testAddStaker", func(c *fiber.Ctx) error {

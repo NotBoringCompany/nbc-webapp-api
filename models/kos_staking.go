@@ -27,7 +27,7 @@ Defines the `StakingSubpool` collection which is used to store all staking subpo
 type StakingSubpool struct {
 	ID                       primitive.ObjectID       `bson:"_id,omitempty"`                      // the object ID of the staking subpool
 	SubpoolID                int                      `bson:"subpoolID,omitempty"`                // unique ID for each staking subpool (starts at 1 for the first staking subpool IN EACH POOL, increments everytime)
-	Staker                   *primitive.ObjectID      `bson:"stakers,omitempty"`                  // the staker that owns this subpool (points to a staker instance from the `Staker` collection)
+	Staker                   *primitive.ObjectID      `bson:"staker,omitempty"`                   // the staker that owns this subpool (points to a staker instance from the `Staker` collection)
 	EnterTime                time.Time                `bson:"enterTime,omitempty"`                // the time when the staker enters the pool with this subpool
 	ExitTime                 time.Time                `bson:"exitTime,omitempty"`                 // the time when the staker exits the pool with this subpool
 	StakedKeys               []*KOSSimplifiedMetadata `bson:"stakedKeys,omitempty"`               // the keys of salvation staked in this subpool

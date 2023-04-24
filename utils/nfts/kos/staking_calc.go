@@ -1,9 +1,50 @@
 package utils_kos
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"math"
 	"nbc-backend-api-v2/models"
+	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+/*
+ONLY FOR TOKEN REWARDS: calculate the reward share for a specific subpool of ID `subpoolId` for a staking pool with ID `stakingPoolId`.
+*/
+func CalcSubpoolTokenShare(collection *mongo.Collection, stakingPoolId, subpoolId int) (float64, error) {
+	if collection.Name() != "RHStakingPool" {
+		return 0, errors.New("collection must be RHStakingPool")
+	}
+
+	// fetch the accumulated subpool points for a specific subpool of ID `subpoolId` for a specific staking pool with ID `stakingPoolId`
+	accSubpoolPoints, err := GetAccSubpoolPoints(collection, stakingPoolId, subpoolId)
+	if err != nil {
+		return 0, err
+	}
+
+	// fetch the total subpool points across ALL subpools for a specific staking pool with ID `stakingPoolId`
+	totalSubpoolPoints, err := GetTotalSubpoolPoints(collection, stakingPoolId)
+	if err != nil {
+		return 0, err
+	}
+
+	// fetch the total token reward for the staking pool
+	totalTokenReward, err := GetTotalTokenReward(collection, stakingPoolId)
+	if err != nil {
+		return 0, err
+	}
+
+	// calculate the reward share for a specific subpool of ID `subpoolId` for a specific staking pool with ID `stakingPoolId`
+	rewardShare := math.Round(accSubpoolPoints/totalSubpoolPoints*totalTokenReward*100) / 100
+
+	fmt.Printf("Reward share for subpool %d of staking pool %d: %f\n", subpoolId, stakingPoolId, rewardShare)
+
+	return rewardShare, nil
+}
 
 /*
 Calculates the subpool points generated for the user's subpool based on the keys and keychain/superior keychain staked.
@@ -56,6 +97,29 @@ func CalculateKeyCombo(keys []*models.KOSSimplifiedMetadata) float64 {
 
 	// call `BaseKeyCombo` with the key count, houses and types
 	return BaseKeyCombo(len(keys), houses, types)
+}
+
+/*
+ONLY FOR TOKEN REWARDS: gets the total token reward for a staking pool with ID `stakingPoolId`.
+*/
+func GetTotalTokenReward(collection *mongo.Collection, stakingPoolId int) (float64, error) {
+	if collection.Name() != "RHStakingPool" {
+		return 0, errors.New("collection must be RHStakingPool")
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+
+	var stakingPool models.StakingPool
+	if err := collection.FindOne(context.Background(), filter).Decode(&stakingPool); err != nil {
+		return 0, err
+	}
+
+	reward := stakingPool.Reward
+	if !strings.Contains(reward.Name, "Token") {
+		return 0, errors.New("reward must be a token") // reward must be a token, or else there is no total token reward
+	}
+
+	return float64(reward.Amount), nil
 }
 
 /*
