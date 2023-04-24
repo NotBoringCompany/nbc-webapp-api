@@ -583,7 +583,13 @@ func AddSubpool(
 	}
 
 	// check if the staker is banned.
-	/// TO DO HERE!!!! ////////////
+	banned, err := CheckIfStakerBanned(collection, stakerWallet)
+	if err != nil {
+		return err
+	}
+	if banned {
+		return errors.New("staker is temporarily banned from staking")
+	}
 
 	// check if any of the keys in `keys` are already staked.
 	// if even just one of them are, return an error.

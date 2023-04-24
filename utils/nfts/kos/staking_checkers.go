@@ -236,6 +236,9 @@ func UpdateStakerBannedData(collection *mongo.Collection, stakerId *primitive.Ob
 	return nil
 }
 
+/*
+Checks if a staker with the given wallet is banned.
+*/
 func CheckIfStakerBanned(collection *mongo.Collection, wallet string) (bool, error) {
 	if collection.Name() != "RHStakerData" {
 		return true, errors.New("collection must be RHStakerData") // defaults to true if an error occurs
