@@ -582,6 +582,9 @@ func AddSubpool(
 		return errors.New("time allowance for this staking pool has passed. please wait for the next staking pool to open")
 	}
 
+	// check if the staker is banned.
+	/// TO DO HERE!!!! ////////////
+
 	// check if any of the keys in `keys` are already staked.
 	// if even just one of them are, return an error.
 	checkKeysStaked, err := CheckIfKeysStaked(collection, stakingPoolId, keys)

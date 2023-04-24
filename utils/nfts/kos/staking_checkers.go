@@ -236,6 +236,27 @@ func UpdateStakerBannedData(collection *mongo.Collection, stakerId *primitive.Ob
 	return nil
 }
 
+func CheckIfStakerBanned(collection *mongo.Collection, wallet string) (bool, error) {
+	if collection.Name() != "RHStakerData" {
+		return true, errors.New("collection must be RHStakerData") // defaults to true if an error occurs
+	}
+
+	filter := bson.M{"wallet": wallet}
+	var staker models.Staker
+	err := collection.FindOne(context.Background(), filter).Decode(&staker)
+
+	if err != nil {
+		return true, err //defaults to true if an error occurs
+	}
+
+	if staker.BannedData == nil {
+		return false, nil
+	}
+
+	// checks if the CurrentUnbanTime is greater than the current time. if so, then the staker is banned and the fn returns true.
+	return time.Now().Before(staker.BannedData.CurrentUnbanTime), nil
+}
+
 /*
 Gets all staking pools from `RHStakingPool` and returns them as a slice of `StakingPool` instances.
 */

@@ -225,6 +225,15 @@ func main() {
 		return c.JSON("Success")
 	})
 
+	app.Get("/checkIfBanned", func(c *fiber.Ctx) error {
+		banned, err := UtilsKOS.CheckIfStakerBanned(configs.GetCollections(configs.DB, "RHStakerData"), "0x8FbFE537A211d81F90774EE7002ff784E352024a")
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		return c.JSON(banned)
+	})
+
 	// app.Get("/testAddStaker", func(c *fiber.Ctx) error {
 	// 	err := UtilsKOS.AddStaker(configs.GetCollections(configs.DB, "RHStakerData"), "0xbc01Db6ea15c344529159F9c9D8eAb37C130a3bE")
 	// 	if err != nil {
