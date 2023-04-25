@@ -1,4 +1,4 @@
-package api
+package utils_kos
 
 import (
 	"fmt"
@@ -31,11 +31,11 @@ func kosExplicitOwnership() ([]models.ExplicitOwnership, error) {
 }
 
 /*
-`KOSOwnerIDs` returns the owned token IDs for the given `address` for the KOS collection.
+`OwnerIDs` returns the owned token IDs for the given `address` for the KOS collection.
 
 	`address` the EVM address of the owner
 */
-func KOSOwnerIDs(address string) ([]*big.Int, error) {
+func OwnerIDs(address string) ([]*big.Int, error) {
 	// calls `GetOwnerIds` for the Key Of Salvation contract with the given address
 	ownerIds, err := UtilsNFT.GetOwnerIDs(
 		"ALCHEMY_ETH_API_KEY",
@@ -56,7 +56,7 @@ func KOSOwnerIDs(address string) ([]*big.Int, error) {
 }
 
 /*
-`VerifyKOSOwnership` is a scheduled function that checks that `address` still owns ANY of the mentioned `ids` for the KOS collection.
+`VerifyOwnership` is a scheduled function that checks that `address` still owns ANY of the mentioned `ids` for the KOS collection.
 
 If even just one of the ids are no longer owned by `address`, this function returns false.
 
@@ -67,8 +67,8 @@ For multiple pools, this function should be called multiple times, each for each
 	`address` the EVM address of the owner
 	`ids` the token IDs to check
 */
-func VerifyKOSOwnership(address string, ids []int) (bool, error) {
-	currentOwnedIds, err := KOSOwnerIDs(address)
+func VerifyOwnership(address string, ids []int) (bool, error) {
+	currentOwnedIds, err := OwnerIDs(address)
 	fmt.Println("Current owned ids: ", currentOwnedIds)
 	if err != nil {
 		return false, err

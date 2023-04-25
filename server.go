@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"nbc-backend-api-v2/api"
+	NftAPI "nbc-backend-api-v2/api/nfts"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
 	UtilsKOS "nbc-backend-api-v2/utils/nfts/kos"
@@ -34,7 +34,7 @@ func main() {
 	// scheduler.StartAsync()
 
 	app.Get("/test", func(c *fiber.Ctx) error {
-		data, err := api.KOSOwnerIDs("0xb3bf8cd8Ba8BD013F4C318ED3C75C3f154a502fA")
+		data, err := NftAPI.KOSOwnerIDs("0xb3bf8cd8Ba8BD013F4C318ED3C75C3f154a502fA")
 		if err != nil {
 			return c.SendString(err.Error())
 		}

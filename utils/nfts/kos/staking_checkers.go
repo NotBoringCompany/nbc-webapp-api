@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"nbc-backend-api-v2/api"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	UtilsKeychain "nbc-backend-api-v2/utils/nfts/keychain"
+	UtilsSuperiorKeychain "nbc-backend-api-v2/utils/nfts/superior_keychain"
 )
 
 /*
@@ -47,7 +49,7 @@ func VerifyStakerOwnership(collection *mongo.Collection) error {
 			}
 
 			// check whether the staker still owns the staked keys
-			stillOwned, err := api.VerifyKOSOwnership(stakerData.Wallet, stakedKeyIds)
+			stillOwned, err := VerifyOwnership(stakerData.Wallet, stakedKeyIds)
 			if err != nil {
 				return err
 			}
@@ -71,7 +73,7 @@ func VerifyStakerOwnership(collection *mongo.Collection) error {
 		// check whether the staker still owns the keychain
 		// if a keychain is staked, the keychain id is not -1 or 0.
 		if subpool.StakedKeychainID != -1 && subpool.StakedKeychainID != 0 {
-			stillOwned, err := api.VerifyKeychainOwnership(stakerData.Wallet, []int{subpool.StakedKeychainID})
+			stillOwned, err := UtilsKeychain.VerifyOwnership(stakerData.Wallet, []int{subpool.StakedKeychainID})
 			if err != nil {
 				return err
 			}
@@ -97,7 +99,7 @@ func VerifyStakerOwnership(collection *mongo.Collection) error {
 		// check whether the staker still owns the superior keychain
 		// if a superior keychain is staked, the superior keychain id is not -1 or 0.
 		if subpool.StakedSuperiorKeychainID != -1 && subpool.StakedSuperiorKeychainID != 0 {
-			stillOwned, err := api.VerifySuperiorKeychainOwnership(stakerData.Wallet, []int{subpool.StakedSuperiorKeychainID})
+			stillOwned, err := UtilsSuperiorKeychain.VerifyOwnership(stakerData.Wallet, []int{subpool.StakedSuperiorKeychainID})
 			if err != nil {
 				return err
 			}
@@ -185,7 +187,7 @@ func CheckPoolTimeAllowanceExceeded(collection *mongo.Collection, stakingPoolId 
 /*
 Multiple checks to ensure the eligibility of a user to add a subpool with regards to the keys and keychain/superior keychain to stake.
 */
-func CheckKeysToStakeEligiblity(keys []*models.KOSSimplifiedMetadata, keychainId, superiorKeychainId int) error {
+func CheckKeysToStakeEligibility(keys []*models.KOSSimplifiedMetadata, keychainId, superiorKeychainId int) error {
 	// ensures that there is at least 1 key to stake.
 	if len(keys) == 0 || keys == nil {
 		return errors.New("must stake at least 1 key")

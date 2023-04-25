@@ -1,4 +1,4 @@
-package api
+package utils_keychain
 
 import (
 	"fmt"
@@ -7,18 +7,18 @@ import (
 )
 
 /*
-`SuperiorKeychainOwnerIDs` returns the owned token IDs for the given `address` for the Superior Keychain collection.
+`OwnerIDs` returns the owned token IDs for the given `address` for the Keychain collection.
 
 	`address` the EVM address of the owner
 */
-func SuperiorKeychainOwnerIDs(address string) ([]*big.Int, error) {
-	// calls `GetOwnerIds` for the Superior Keychain contract with the given address
+func OwnerIDs(address string) ([]*big.Int, error) {
+	// calls `GetOwnerIds` for the Keychain contract with the given address
 	ownerIds, err := UtilsNFT.GetOwnerIDs(
 		"ALCHEMY_ETH_API_KEY",
 		true,
 		"https://eth-mainnet.g.alchemy.com/v2/",
-		"abi/SuperiorKeychain.json",
-		"SUPERIOR_KEYCHAIN_ADDRESS",
+		"abi/Keychain.json",
+		"KEYCHAIN_ADDRESS",
 		address,
 		nil,
 		nil,
@@ -32,13 +32,13 @@ func SuperiorKeychainOwnerIDs(address string) ([]*big.Int, error) {
 }
 
 /*
-Verifies that `address` owns ALL of the mentioned `ids` for the Superior Keychain collection.
+Verifies that `address` owns ALL of the mentioned `ids` for the Keychain collection.
 
 	`address` the EVM address of the owner
 	`ids` the token IDs to verify
 */
-func VerifySuperiorKeychainOwnership(address string, ids []int) (bool, error) {
-	currentOwnedIds, err := SuperiorKeychainOwnerIDs(address)
+func VerifyOwnership(address string, ids []int) (bool, error) {
+	currentOwnedIds, err := OwnerIDs(address)
 	if err != nil {
 		return false, err
 	}
@@ -58,6 +58,6 @@ func VerifySuperiorKeychainOwnership(address string, ids []int) (bool, error) {
 		}
 	}
 
-	fmt.Printf("All superior keychain `ids` are owned by `address` %s", address)
+	fmt.Printf("All keychain `ids` are owned by `address` %s", address)
 	return true, nil
 }

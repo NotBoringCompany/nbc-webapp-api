@@ -71,3 +71,15 @@ func FetchSimplifiedMetadata(tokenId int) *models.KOSSimplifiedMetadata {
 
 	return simplifiedMetadata
 }
+
+/*
+Gets the simplified metadata struct instance for each key ID.
+*/
+func GetMetadataFromIDs(keyIds []int) []*models.KOSSimplifiedMetadata {
+	var metadatas []*models.KOSSimplifiedMetadata
+	for _, id := range keyIds {
+		metadatas = append(metadatas, FetchSimplifiedMetadata(id))
+	}
+
+	return metadatas
+}

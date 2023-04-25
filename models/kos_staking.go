@@ -83,3 +83,13 @@ type KeyCombo struct {
 	Houses   []string `bson:"houses"`   // the house of each key
 	Types    []string `bson:"types"`    // the type of each key
 }
+
+/*
+Represents a detailed way of calculating the subpool points, breaking down how the points are calculated.
+*/
+type DetailedSubpoolPoints struct {
+	LuckAndLuckBoostSum float64 `bson:"luckAndLuckBoostSum"` // the sum of the luck and luck boost of all keys
+	KeyCombo            float64 `bson:"keyCombo"`            // the key combo multiplier
+	KeychainCombo       float64 `bson:"keychainCombo"`       // the keychain combo multiplier
+	Total               float64 `bson:"total"`               // the total subpool points (calculated by the formula)
+}

@@ -1015,7 +1015,7 @@ func AddSubpool(
 
 	// calls `CheckKeysToStakeEligibility` to check for amount of keys to stake, keychain, and superior keychain eligibility.
 	// if any of the checks fail, return an error.
-	err = CheckKeysToStakeEligiblity(keys, keychainId, superiorKeychainId)
+	err = CheckKeysToStakeEligibility(keys, keychainId, superiorKeychainId)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package utils_nfts
+package utils_nft
 
 import (
 	"encoding/json"
