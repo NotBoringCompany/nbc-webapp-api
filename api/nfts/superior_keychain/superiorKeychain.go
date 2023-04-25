@@ -1,4 +1,4 @@
-package api_nfts
+package api_superiorkeychain
 
 import (
 	"nbc-backend-api-v2/configs"

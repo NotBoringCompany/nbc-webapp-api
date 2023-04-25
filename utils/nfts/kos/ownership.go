@@ -56,7 +56,7 @@ func OwnerIDs(address string) ([]*big.Int, error) {
 }
 
 /*
-`VerifyOwnership` is a scheduled function that checks that `address` still owns ANY of the mentioned `ids` for the KOS collection.
+`VerifyOwnership` checks if `address` still owns ANY of the mentioned `ids` for the KOS collection.
 
 If even just one of the ids are no longer owned by `address`, this function returns false.
 

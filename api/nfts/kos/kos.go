@@ -1,4 +1,4 @@
-package api_nfts
+package api_kos
 
 import (
 	"math/big"
@@ -9,20 +9,16 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-func FetchKOSMetadata(tokenId int) *models.KOSMetadata {
+func FetchMetadata(tokenId int) *models.KOSMetadata {
 	return UtilsKOS.FetchMetadata(tokenId)
 }
 
-func FetchKOSSimplifiedMetadata(tokenId int) *models.KOSSimplifiedMetadata {
+func FetchSimplifiedMetadata(tokenId int) *models.KOSSimplifiedMetadata {
 	return UtilsKOS.FetchSimplifiedMetadata(tokenId)
 }
 
 func OwnerIDs(address string) ([]*big.Int, error) {
 	return UtilsKOS.OwnerIDs(address)
-}
-
-func VerifyOwnership(address string, ids []int) (bool, error) {
-	return UtilsKOS.VerifyOwnership(address, ids)
 }
 
 func GetTotalTokenReward(stakingPoolId int) (float64, error) {
@@ -35,7 +31,7 @@ func CalculateSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) fl
 	return UtilsKOS.CalculateSubpoolPoints(metadatas, keychainId, superiorKeychainId)
 }
 
-func CalcSubpoolTokenShare(stakingPoolId, subpoolId int) (float64, error) {
+func CalculateSubpoolTokenShare(stakingPoolId, subpoolId int) (float64, error) {
 	return UtilsKOS.CalcSubpoolTokenShare(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId)
 }
 
@@ -45,12 +41,6 @@ func CheckIfStakerBanned(wallet string) (bool, error) {
 
 func CheckPoolTimeAllowanceExceeded(stakingPoolId int) (bool, error) {
 	return UtilsKOS.CheckPoolTimeAllowanceExceeded(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId)
-}
-
-func CheckKeysToStakeEligibility(keyIds []int, keychainId, superiorKeychainId int) error {
-	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
-
-	return UtilsKOS.CheckKeysToStakeEligibility(metadatas, keychainId, superiorKeychainId)
 }
 
 func CheckIfKeysStaked(stakingPoolId int, keyIds []int) (bool, error) {
