@@ -3,6 +3,11 @@ build:
     web: Dockerfile
 
 run:
-  sh: ./app
-  bash: bash -c "./app"
-  web: ./app
+  sh:
+    command:
+      - ./app
+    image: nbc-webapp-api
+  bash:
+    command:
+      - bash -c "./app"
+    image: nbc-webapp-api
