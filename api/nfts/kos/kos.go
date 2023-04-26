@@ -117,6 +117,10 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 
 }
 
+/********************
+END OF CHAIN FUNCTIONS
+********************/
+
 func FetchMetadata(tokenId int) *models.KOSMetadata {
 	return UtilsKOS.FetchMetadata(tokenId)
 }
