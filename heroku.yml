@@ -3,4 +3,4 @@ build:
     web: Dockerfile
 
 run:
-  web: docker run -p $PORT:8080 nbc-webapp-api
+  web: ./app
