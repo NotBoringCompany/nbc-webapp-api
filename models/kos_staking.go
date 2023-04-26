@@ -93,3 +93,29 @@ type DetailedSubpoolPoints struct {
 	KeychainCombo       float64 `bson:"keychainCombo"`       // the keychain combo multiplier
 	Total               float64 `bson:"total"`               // the total subpool points (calculated by the formula)
 }
+
+/*
+A staker's inventory. Used for API calls to display all the key, keychain and superior keychain IDs of a staker.
+*/
+type KOSStakerInventory struct {
+	Wallet               string          `json:"wallet"`
+	KeyData              []*KeyData      `json:"keyData"`
+	KeychainData         []*KeychainData `json:"keychainData"`
+	SuperiorKeychainData []*KeychainData `json:"superiorKeychainData"`
+}
+
+/*
+Additional data for a Key Of Salvation. Checks (on top of having the metadata) if the key is stakeable.
+*/
+type KeyData struct {
+	KeyMetadata *KOSSimplifiedMetadata `json:"keyMetadata"`
+	Stakeable   bool                   `json:"stakeable"`
+}
+
+/*
+Used for both keychain and superior keychain. Checks if the keychain(s) is/are stakeable.
+*/
+type KeychainData struct {
+	KeychainID int  `json:"keychainID"`
+	Stakeable  bool `json:"stakeable"`
+}
