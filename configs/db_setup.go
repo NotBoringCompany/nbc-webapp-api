@@ -13,8 +13,8 @@ import (
 /*
 `ConnectMongo` connects to the MongoDB database and returns a client instance.
 */
-func ConnectMongo() *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI(LoadMongoEnv()))
+func ConnectMongo(mongoUri string) *mongo.Client {
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoUri))
 	if err != nil {
 		log.Fatal(err)
 	}
