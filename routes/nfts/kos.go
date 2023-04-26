@@ -12,6 +12,7 @@ import (
 )
 
 func KOSRoutes(app *fiber.App) {
+	// FetchStakerInventory route
 	app.Get("/kos/fetch-staker-inventory/:wallet/:stakingPoolId", func(c *fiber.Ctx) error {
 		wallet := c.Params("wallet")
 		stakingPoolId := c.Params("stakingPoolId")
