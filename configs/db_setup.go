@@ -15,10 +15,6 @@ import (
 `ConnectMongo` connects to the MongoDB database and returns a client instance.
 */
 func ConnectMongo() *mongo.Client {
-	err := LoadEnv()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
 	if err != nil {

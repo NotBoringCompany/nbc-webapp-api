@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"nbc-backend-api-v2/configs"
 	RoutesNFTs "nbc-backend-api-v2/routes/nfts"
 
@@ -10,10 +9,10 @@ import (
 )
 
 func main() {
-	err := configs.LoadEnv()
-	if err != nil {
-		log.Fatal(err)
-	}
+	// err := configs.LoadEnv()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	app := fiber.New()
 
