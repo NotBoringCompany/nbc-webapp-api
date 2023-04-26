@@ -11,3 +11,4 @@ run:
     command:
       - bash -c "./app"
     image: nbc-webapp-api
+  web: ./app
