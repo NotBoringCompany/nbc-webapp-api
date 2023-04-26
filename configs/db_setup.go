@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -38,7 +39,7 @@ func ConnectMongo(mongoUri string) *mongo.Client {
 }
 
 // client instance
-var DB *mongo.Client = ConnectMongo()
+var DB *mongo.Client = ConnectMongo(os.Getenv("MONGODB_URI"))
 
 /*
 `GetCollections` returns a collection instance from the database given the collection name.
