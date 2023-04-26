@@ -23,5 +23,5 @@ func main() {
 
 	RoutesNFTs.KOSRoutes(app)
 
-	app.Listen("0.0.0.0:3000")
+	app.Listen("0.0.0.0:8080")
 }
