@@ -3,4 +3,6 @@ build:
     web: Dockerfile
 
 run:
-  web: bash -c "./app"
+  sh: ./app
+  bash: bash -c "./app"
+  web: ./app
