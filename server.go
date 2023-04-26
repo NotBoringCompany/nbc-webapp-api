@@ -3,6 +3,7 @@ package main
 import (
 	"nbc-backend-api-v2/configs"
 	RoutesNFTs "nbc-backend-api-v2/routes/nfts"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -13,6 +14,10 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
 
 	app := fiber.New()
 
@@ -23,5 +28,5 @@ func main() {
 
 	RoutesNFTs.KOSRoutes(app)
 
-	app.Listen(":8080")
+	app.Listen(":" + port)
 }
