@@ -14,8 +14,13 @@ import (
 /*
 `ConnectMongo` connects to the MongoDB database and returns a client instance.
 */
-func ConnectMongo(mongoUri string) *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoUri))
+func ConnectMongo() *mongo.Client {
+	err := LoadEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +44,7 @@ func ConnectMongo(mongoUri string) *mongo.Client {
 }
 
 // client instance
-var DB *mongo.Client = ConnectMongo(os.Getenv("MONGODB_URI"))
+var DB *mongo.Client = ConnectMongo()
 
 /*
 `GetCollections` returns a collection instance from the database given the collection name.

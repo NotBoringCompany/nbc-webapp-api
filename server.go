@@ -4,7 +4,6 @@ import (
 	"log"
 	"nbc-backend-api-v2/configs"
 	RoutesNFTs "nbc-backend-api-v2/routes/nfts"
-	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -21,7 +20,7 @@ func main() {
 	app.Use(cors.New())
 
 	// runs the ConnectMongo function
-	configs.ConnectMongo(os.Getenv("MONGODB_URI"))
+	configs.ConnectMongo()
 
 	RoutesNFTs.KOSRoutes(app)
 
