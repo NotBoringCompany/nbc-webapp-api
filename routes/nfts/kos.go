@@ -41,6 +41,34 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	// GetStakingPoolData route
+	app.Get("/kos/staking-pool-data/:stakingPoolId", func(c *fiber.Ctx) error {
+		id := c.Params("stakingPoolId")
+		idInt, err := strconv.Atoi(id)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given stakingPoolId to int.",
+				Data:    nil,
+			})
+		}
+
+		res, err := ApiKOS.GetStakingPoolData(idInt)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully fetch staking pool data for given stakingPoolId: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully fetched staking pool data for given stakingPoolId.",
+			Data:    &fiber.Map{"stakingPoolData": res},
+		})
+	})
+
 	// FetchStakingPoolData route
 	app.Get("/kos/fetch-staking-pools", func(c *fiber.Ctx) error {
 		res, err := ApiKOS.FetchStakingPoolData()

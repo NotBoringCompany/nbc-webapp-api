@@ -522,6 +522,24 @@ func UnstakeFromStakingPool(collection *mongo.Collection, stakingPoolId int, sta
 }
 
 /*
+Gets the staking pool data for a staking pool with `stakingPoolId`.
+*/
+func GetStakingPoolData(collection *mongo.Collection, stakingPoolId int) (*models.StakingPool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("collection must be RHStakingPool")
+	}
+
+	var stakingPool models.StakingPool
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return nil, err
+	}
+
+	return &stakingPool, nil
+}
+
+/*
 Gets the start time of a staking pool.
 */
 func GetStartTimeOfStakingPool(collection *mongo.Collection, stakingPoolId int) (time.Time, error) {

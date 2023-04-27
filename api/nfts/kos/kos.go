@@ -165,6 +165,10 @@ func GetTotalTokenReward(stakingPoolId int) (float64, error) {
 	return UtilsKOS.GetTotalTokenReward(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId)
 }
 
+func GetStakingPoolData(stakingPoolId int) (*models.StakingPool, error) {
+	return UtilsKOS.GetStakingPoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId)
+}
+
 func CalculateSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) float64 {
 	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
 
