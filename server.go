@@ -21,9 +21,7 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		Prefork:      true,
-		ServerHeader: "NBC Backend API",
-		AppName:      "NBC Backend API",
+		Prefork: true,
 	})
 
 	app.Use(cors.New())
