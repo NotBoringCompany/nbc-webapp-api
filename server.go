@@ -20,9 +20,7 @@ func main() {
 		port = "3000"
 	}
 
-	app := fiber.New(fiber.Config{
-		Prefork: true,
-	})
+	app := fiber.New()
 
 	app.Use(cors.New())
 
