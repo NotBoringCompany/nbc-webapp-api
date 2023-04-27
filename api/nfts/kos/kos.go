@@ -1,6 +1,8 @@
 package api_kos
 
 import (
+	"fmt"
+	"log"
 	"math/big"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
@@ -37,75 +39,111 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 		return nil, err
 	}
 
-	// then, get the metadata for the owned key ID
-	var keyMetadatas []*models.KOSSimplifiedMetadata
+	fmt.Println(ownedKeyIds)
+
+	// fetch metadata for all key IDs concurrently
+	keyMetadataCh := make(chan *models.KOSSimplifiedMetadata, len(ownedKeyIds))
 	for _, id := range ownedKeyIds {
-		metadata := FetchSimplifiedMetadata(int(id.Int64()))
-		keyMetadatas = append(keyMetadatas, metadata)
+		go func(tokenId int) {
+			metadata, err := FetchSimplifiedMetadata(tokenId)
+			if err != nil {
+				log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+			} else {
+				keyMetadataCh <- metadata
+			}
+		}(int(id.Int64()))
 	}
 
+	// fetch metadata for all keychain IDs concurrently
+	keychainMetadataCh := make(chan *models.KOSSimplifiedMetadata, len(ownedKeychainIds))
+	for _, id := range ownedKeychainIds {
+		go func(tokenId int) {
+			metadata, err := FetchSimplifiedMetadata(tokenId)
+			if err != nil {
+				log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+			} else {
+				keychainMetadataCh <- metadata
+			}
+		}(int(id.Int64()))
+	}
+
+	// fetch metadata for all superior keychain IDs concurrently
+	superiorKeychainMetadataCh := make(chan *models.KOSSimplifiedMetadata, len(ownedSuperiorKeychainIds))
+	for _, id := range ownedSuperiorKeychainIds {
+		go func(tokenId int) {
+			metadata, err := FetchSimplifiedMetadata(tokenId)
+			if err != nil {
+				log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+			} else {
+				superiorKeychainMetadataCh <- metadata
+			}
+		}(int(id.Int64()))
+	}
+
+	// collect metadata results
+	var keyMetadata []*models.KOSSimplifiedMetadata
+	var keychainMetadata []*models.KOSSimplifiedMetadata
+	var superiorKeychainMetadata []*models.KOSSimplifiedMetadata
+	for i := 0; i < len(ownedKeyIds); i++ {
+		select {
+		case metadata := <-keyMetadataCh:
+			keyMetadata = append(keyMetadata, metadata)
+		default:
+			// skip if no metadata available
+		}
+	}
+	for i := 0; i < len(ownedKeychainIds); i++ {
+		select {
+		case metadata := <-keychainMetadataCh:
+			keychainMetadata = append(keychainMetadata, metadata)
+		default:
+			// skip if no metadata available
+		}
+	}
+	for i := 0; i < len(ownedSuperiorKeychainIds); i++ {
+		select {
+		case metadata := <-superiorKeychainMetadataCh:
+			superiorKeychainMetadata = append(superiorKeychainMetadata, metadata)
+		default:
+			// skip if no metadata available
+		}
+	}
+
+	// check if any of the keys, keychains and/or superior keychains are staked in the specified staking pool
 	var keyData []*models.KeyData
+	for _, metadata := range keyMetadata {
+		isStaked, err := UtilsKOS.CheckIfKeyStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, metadata)
+		if err != nil {
+			return nil, err
+		}
+		keyData = append(keyData, &models.KeyData{
+			KeyMetadata: metadata,
+			Stakeable:   !isStaked,
+		})
+	}
+
 	var keychainData []*models.KeychainData
+	for _, metadata := range keychainMetadata {
+		isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, metadata.TokenID)
+		if err != nil {
+			return nil, err
+		}
+		keychainData = append(keychainData, &models.KeychainData{
+			KeychainID: metadata.TokenID,
+			Stakeable:  !isStaked,
+		})
+	}
+
 	var superiorKeychainData []*models.KeychainData
-
-	// IF STAKINGPOOLID ISN'T ADDED (IS -1 OR 0), THEN RETURN THE OWNED KEY, KEYCHAIN AND SUPERIOR KEYCHAIN IDS
-	if stakingPoolId == -1 || stakingPoolId == 0 {
-		for _, id := range ownedKeyIds {
-			keyData = append(keyData, &models.KeyData{
-				KeyMetadata: FetchSimplifiedMetadata(int(id.Int64())),
-				Stakeable:   true,
-			})
+	for _, metadata := range superiorKeychainMetadata {
+		isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, metadata.TokenID)
+		if err != nil {
+			return nil, err
 		}
-
-		for _, id := range ownedKeychainIds {
-			keychainData = append(keychainData, &models.KeychainData{
-				KeychainID: int(id.Int64()),
-				Stakeable:  true,
-			})
-		}
-
-		for _, id := range ownedSuperiorKeychainIds {
-			superiorKeychainData = append(superiorKeychainData, &models.KeychainData{
-				KeychainID: int(id.Int64()),
-				Stakeable:  true,
-			})
-		}
-		// if stakingPoolId is not -1 or 0, then it is a valid staking pool ID
-	} else {
-		// then, check if any of the keys, keychains and/or superior keychains are staked in the specified staking pool
-		for _, key := range keyMetadatas {
-			isStaked, err := UtilsKOS.CheckIfKeyStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, key)
-			if err != nil {
-				return nil, err
-			}
-
-			keyData = append(keyData, &models.KeyData{
-				KeyMetadata: key,
-				Stakeable:   !isStaked, // if the key is staked, it is not stakeable and vice versa.
-			})
-		}
-		for _, keychainId := range ownedKeychainIds {
-			isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, int(keychainId.Int64()))
-			if err != nil {
-				return nil, err
-			}
-
-			keychainData = append(keychainData, &models.KeychainData{
-				KeychainID: int(keychainId.Int64()),
-				Stakeable:  !isStaked, // if the keychain is staked, it is not stakeable and vice versa.
-			})
-		}
-		for _, superiorKeychainId := range ownedSuperiorKeychainIds {
-			isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, int(superiorKeychainId.Int64()))
-			if err != nil {
-				return nil, err
-			}
-
-			superiorKeychainData = append(superiorKeychainData, &models.KeychainData{
-				KeychainID: int(superiorKeychainId.Int64()),
-				Stakeable:  !isStaked, // if the superior keychain is staked, it is not stakeable and vice versa.
-			})
-		}
+		superiorKeychainData = append(superiorKeychainData, &models.KeychainData{
+			KeychainID: metadata.TokenID,
+			Stakeable:  !isStaked,
+		})
 	}
 
 	return &models.KOSStakerInventory{
@@ -115,6 +153,101 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 		SuperiorKeychainData: superiorKeychainData,
 	}, nil
 }
+
+// func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInventory, error) {
+// 	// first, get the owned key, keychain and superior keychain IDs
+
+// 	ownedKeyIds, err := UtilsKOS.OwnerIDs(wallet)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	ownedKeychainIds, err := UtilsKeychain.OwnerIDs(wallet)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	ownedSuperiorKeychainIds, err := UtilsSuperiorKeychain.OwnerIDs(wallet)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	// then, get the metadata for the owned key ID
+// 	var keyMetadatas []*models.KOSSimplifiedMetadata
+// 	for _, id := range ownedKeyIds {
+// 		metadata := FetchSimplifiedMetadata(int(id.Int64()))
+// 		keyMetadatas = append(keyMetadatas, metadata)
+// 	}
+
+// 	var keyData []*models.KeyData
+// 	var keychainData []*models.KeychainData
+// 	var superiorKeychainData []*models.KeychainData
+
+// 	// IF STAKINGPOOLID ISN'T ADDED (IS -1 OR 0), THEN RETURN THE OWNED KEY, KEYCHAIN AND SUPERIOR KEYCHAIN IDS
+// 	if stakingPoolId == -1 || stakingPoolId == 0 {
+// 		for _, id := range ownedKeyIds {
+// 			keyData = append(keyData, &models.KeyData{
+// 				KeyMetadata: FetchSimplifiedMetadata(int(id.Int64())),
+// 				Stakeable:   true,
+// 			})
+// 		}
+
+// 		for _, id := range ownedKeychainIds {
+// 			keychainData = append(keychainData, &models.KeychainData{
+// 				KeychainID: int(id.Int64()),
+// 				Stakeable:  true,
+// 			})
+// 		}
+
+// 		for _, id := range ownedSuperiorKeychainIds {
+// 			superiorKeychainData = append(superiorKeychainData, &models.KeychainData{
+// 				KeychainID: int(id.Int64()),
+// 				Stakeable:  true,
+// 			})
+// 		}
+// 		// if stakingPoolId is not -1 or 0, then it is a valid staking pool ID
+// 	} else {
+// 		// then, check if any of the keys, keychains and/or superior keychains are staked in the specified staking pool
+// 		for _, key := range keyMetadatas {
+// 			isStaked, err := UtilsKOS.CheckIfKeyStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, key)
+// 			if err != nil {
+// 				return nil, err
+// 			}
+
+// 			keyData = append(keyData, &models.KeyData{
+// 				KeyMetadata: key,
+// 				Stakeable:   !isStaked, // if the key is staked, it is not stakeable and vice versa.
+// 			})
+// 		}
+// 		for _, keychainId := range ownedKeychainIds {
+// 			isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, int(keychainId.Int64()))
+// 			if err != nil {
+// 				return nil, err
+// 			}
+
+// 			keychainData = append(keychainData, &models.KeychainData{
+// 				KeychainID: int(keychainId.Int64()),
+// 				Stakeable:  !isStaked, // if the keychain is staked, it is not stakeable and vice versa.
+// 			})
+// 		}
+// 		for _, superiorKeychainId := range ownedSuperiorKeychainIds {
+// 			isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, int(superiorKeychainId.Int64()))
+// 			if err != nil {
+// 				return nil, err
+// 			}
+
+// 			superiorKeychainData = append(superiorKeychainData, &models.KeychainData{
+// 				KeychainID: int(superiorKeychainId.Int64()),
+// 				Stakeable:  !isStaked, // if the superior keychain is staked, it is not stakeable and vice versa.
+// 			})
+// 		}
+// 	}
+
+// 	return &models.KOSStakerInventory{
+// 		Wallet:               wallet,
+// 		KeyData:              keyData,
+// 		KeychainData:         keychainData,
+// 		SuperiorKeychainData: superiorKeychainData,
+// 	}, nil
+// }
 
 /*
 Returns all active and closed staking pools, each with their respective staking pool data
@@ -149,11 +282,11 @@ func FetchStakingPoolData() (*models.AllStakingPools, error) {
 END OF CHAIN FUNCTIONS
 ********************/
 
-func FetchMetadata(tokenId int) *models.KOSMetadata {
+func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 	return UtilsKOS.FetchMetadata(tokenId)
 }
 
-func FetchSimplifiedMetadata(tokenId int) *models.KOSSimplifiedMetadata {
+func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
 	return UtilsKOS.FetchSimplifiedMetadata(tokenId)
 }
 

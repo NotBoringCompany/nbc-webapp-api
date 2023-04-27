@@ -1,13 +1,19 @@
 package utils_kos
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"nbc-backend-api-v2/models"
 	"net/http"
 	"os"
+	"sort"
+)
+
+var (
+	client        = &http.Client{}                    // use a global HTTP client to avoid creating a new one for each request
+	metadataCache = make(map[int]*models.KOSMetadata) // use a map to cache metadata for each token ID
 )
 
 /*
@@ -15,51 +21,92 @@ import (
 
 	`tokenId` the token ID of the Key
 */
-func FetchMetadata(tokenId int) *models.KOSMetadata {
-	// create a new HTTP client
-	client := &http.Client{}
+func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
+	// check if metadata is in cache
+	if metadata, ok := metadataCache[tokenId]; ok {
+		return metadata, nil
+	}
 
 	url := os.Getenv("KOS_URI") + fmt.Sprint(tokenId) + ".json"
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
-		log.Fatal("Error while creating request", err)
-		return nil
+		return nil, err
 	}
 
 	// send the request and get the response
 	res, err := client.Do(req)
 	if err != nil {
-		log.Fatal("Error while sending request", err)
-		return nil
+		return nil, err
 	}
 
 	defer res.Body.Close()
 
-	// read the response body into a byte array
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Fatal("Error while reading response body", err)
-		return nil
+	// check if response is OK
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("received non-200 status code: %d", res.StatusCode)
 	}
 
-	// unmarshal the bytes array into a `KOSMetadata` struct instance.
+	// unmarshal the response body into a `KOSMetadata` struct instance
 	var metadata models.KOSMetadata
-	err = json.Unmarshal(body, &metadata)
+	err = json.NewDecoder(res.Body).Decode(&metadata)
 	if err != nil {
-		log.Fatal("Error while unmarshalling response body", err)
-		return nil
+		return nil, err
 	}
 
-	return &metadata
+	// cache metadata
+	metadataCache[tokenId] = &metadata
+
+	return &metadata, nil
 }
+
+// func FetchMetadata(tokenId int) *models.KOSMetadata {
+// 	// create a new HTTP client
+// 	client := &http.Client{}
+
+// 	url := os.Getenv("KOS_URI") + fmt.Sprint(tokenId) + ".json"
+// 	req, err := http.NewRequest("GET", url, nil)
+// 	if err != nil {
+// 		log.Fatal("Error while creating request", err)
+// 		return nil
+// 	}
+
+// 	// send the request and get the response
+// 	res, err := client.Do(req)
+// 	if err != nil {
+// 		log.Fatal("Error while sending request", err)
+// 		return nil
+// 	}
+
+// 	defer res.Body.Close()
+
+// 	// read the response body into a byte array
+// 	body, err := io.ReadAll(res.Body)
+// 	if err != nil {
+// 		log.Fatal("Error while reading response body", err)
+// 		return nil
+// 	}
+
+// 	// unmarshal the bytes array into a `KOSMetadata` struct instance.
+// 	var metadata models.KOSMetadata
+// 	err = json.Unmarshal(body, &metadata)
+// 	if err != nil {
+// 		log.Fatal("Error while unmarshalling response body", err)
+// 		return nil
+// 	}
+
+// 	return &metadata
+// }
 
 /*
 `FetchSimplifiedMetadata` returns a more simplified version of a Key Of Salvation's metadata (returns a KOSSimplifiedMetadata struct).
 
 	`tokenId` the token ID of the Key
 */
-func FetchSimplifiedMetadata(tokenId int) *models.KOSSimplifiedMetadata {
-	metadata := FetchMetadata(tokenId)
+func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
+	metadata, err := FetchMetadata(tokenId)
+	if err != nil {
+		return nil, err
+	}
 
 	simplifiedMetadata := &models.KOSSimplifiedMetadata{
 		TokenID:        tokenId,
@@ -69,8 +116,73 @@ func FetchSimplifiedMetadata(tokenId int) *models.KOSSimplifiedMetadata {
 		LuckBoostTrait: 1 + (metadata.Attributes[1].Value.(float64) / 100),
 	}
 
-	return simplifiedMetadata
+	return simplifiedMetadata, nil
 }
+
+func FetchSimplifiedMetadataConcurrent(tokenIds []int) ([]*models.KOSSimplifiedMetadata, error) {
+	type result struct {
+		index    int
+		metadata *models.KOSSimplifiedMetadata
+		err      error
+	}
+
+	// use a buffered channel to limit the number of concurrent goroutines
+	ch := make(chan result, len(tokenIds))
+
+	// create worker goroutines
+	for i, id := range tokenIds {
+		go func(index, tokenId int) {
+			metadata, err := FetchSimplifiedMetadata(tokenId)
+			ch <- result{index, metadata, err}
+		}(i, id)
+	}
+
+	// collect results
+	results := make([]result, len(tokenIds))
+	for range tokenIds {
+		res := <-ch
+		results[res.index] = res
+	}
+
+	// check for errors
+	var errors []error
+	for _, res := range results {
+		if res.err != nil {
+			errors = append(errors, res.err)
+		}
+	}
+	if len(errors) > 0 {
+		return nil, fmt.Errorf("encountered %d errors: %v", len(errors), errors)
+	}
+
+	// sort results by original order
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].index < results[j].index
+	})
+
+	// extract simplified metadata from results
+	simplifiedMetadata := make([]*models.KOSSimplifiedMetadata, len(results))
+	for i, res := range results {
+		simplifiedMetadata[i] =
+			res.metadata
+	}
+
+	return simplifiedMetadata, nil
+}
+
+// func FetchSimplifiedMetadata(tokenId int) *models.KOSSimplifiedMetadata {
+// 	metadata := FetchMetadata(tokenId)
+
+// 	simplifiedMetadata := &models.KOSSimplifiedMetadata{
+// 		TokenID:        tokenId,
+// 		HouseTrait:     metadata.Attributes[3].Value.(string),
+// 		TypeTrait:      metadata.Attributes[7].Value.(string),
+// 		LuckTrait:      metadata.Attributes[0].Value.(float64),
+// 		LuckBoostTrait: 1 + (metadata.Attributes[1].Value.(float64) / 100),
+// 	}
+
+// 	return simplifiedMetadata
+// }
 
 /*
 Gets the simplified metadata struct instance for each key ID.
@@ -78,7 +190,11 @@ Gets the simplified metadata struct instance for each key ID.
 func GetMetadataFromIDs(keyIds []int) []*models.KOSSimplifiedMetadata {
 	var metadatas []*models.KOSSimplifiedMetadata
 	for _, id := range keyIds {
-		metadatas = append(metadatas, FetchSimplifiedMetadata(id))
+		metadata, err := FetchSimplifiedMetadata(id)
+		if err != nil {
+			log.Fatal("Error while fetching metadata", err)
+		}
+		metadatas = append(metadatas, metadata)
 	}
 
 	return metadatas
