@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	ApiKOS "nbc-backend-api-v2/api/nfts/kos"
 	"nbc-backend-api-v2/configs"
 	RoutesNFTs "nbc-backend-api-v2/routes/nfts"
@@ -12,10 +11,10 @@ import (
 )
 
 func main() {
-	err := configs.LoadEnv()
-	if err != nil {
-		log.Fatal(err)
-	}
+	// err := configs.LoadEnv()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
