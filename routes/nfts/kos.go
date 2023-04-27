@@ -302,7 +302,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/check-if-staker-banned/:address", func(c *fiber.Ctx) error {
+	app.Get("/kos/check-if-staker-banned/:address", func(c *fiber.Ctx) error {
 		// get the address param from the request query params
 		addressParam := c.Params("address")
 
@@ -323,7 +323,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/check-pool-time-allowance-exceeded/:stakingPoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/check-pool-time-allowance-exceeded/:stakingPoolId", func(c *fiber.Ctx) error {
 		// get the stakingPoolId param from the request query params
 		stakingPoolIdParam := c.Params("stakingPoolId")
 
@@ -354,7 +354,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/check-if-keys-staked", func(c *fiber.Ctx) error {
+	app.Get("/kos/check-if-keys-staked", func(c *fiber.Ctx) error {
 		// get the keyIds param from the request query params
 		keyIdsParam := c.Query("keyIds")
 
@@ -404,7 +404,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Post("/add-subpool", func(c *fiber.Ctx) error {
+	app.Post("/kos/add-subpool", func(c *fiber.Ctx) error {
 		type AddSubpoolRequest struct {
 			KeyIds             []int  `json:"keyIds"`
 			StakerWallet       string `json:"stakerWallet"`
