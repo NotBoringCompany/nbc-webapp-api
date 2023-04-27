@@ -10,8 +10,9 @@ import (
 Returns all active and closed staking pools, each with their respective staking pool data
 */
 type AllStakingPools struct {
-	ActivePools []*StakingPool `json:"activePools,omitempty"` // all active staking pools
-	ClosedPools []*StakingPool `json:"closedPools,omitempty"` // all closed staking pools
+	StakeablePools []*StakingPool `json:"stakeablePools,omitempty"` // all active staking pools where users can stake in
+	OngoingPools   []*StakingPool `json:"ongoingPools,omitempty"`   // all ongoing staking pools (starttime <= now < endtime)
+	ClosedPools    []*StakingPool `json:"closedPools,omitempty"`    // all closed staking pools
 }
 
 /*

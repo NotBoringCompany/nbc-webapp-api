@@ -540,9 +540,9 @@ func GetStartTimeOfStakingPool(collection *mongo.Collection, stakingPoolId int) 
 }
 
 /*
-Gets all currently active staking pools.
+Gets all currently stakeable staking pools (where entry allowance has already started, but start time has not yet passed)
 */
-func GetAllActiveStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
+func GetAllStakeableStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
 	if collection.Name() != "RHStakingPool" {
 		return nil, errors.New("collection must be RHStakingPool")
 	}
@@ -551,6 +551,7 @@ func GetAllActiveStakingPools(collection *mongo.Collection) ([]*models.StakingPo
 	filter := bson.M{
 		"$and": []bson.M{
 			{"entryAllowance": bson.M{"$lte": currentTime}},
+			{"startTime": bson.M{"$gt": currentTime}},
 			{"endTime": bson.M{"$gt": currentTime}},
 		},
 	}
@@ -570,7 +571,38 @@ func GetAllActiveStakingPools(collection *mongo.Collection) ([]*models.StakingPo
 }
 
 /*
-Gets all currently closed staking pools.
+Gets all ongoing staking pools. This means that entry and start time has already passed, but end time has not yet passed.
+*/
+func GetAllOngoingStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("collection must be RHStakingPool")
+	}
+	currentTime := time.Now()
+	// filters through all staking pools that have passed entry and start time but have not ended yet
+	filter := bson.M{
+		"$and": []bson.M{
+			{"entryAllowance": bson.M{"$lte": currentTime}},
+			{"startTime": bson.M{"$lte": currentTime}},
+			{"endTime": bson.M{"$gt": currentTime}},
+		},
+	}
+
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var stakingPools []*models.StakingPool
+	if err = cursor.All(context.Background(), &stakingPools); err != nil {
+		return nil, err
+	}
+
+	return stakingPools, nil
+}
+
+/*
+Gets all currently closed staking pools. this is for all staking pools whose end time has already passed.
 */
 func GetAllClosedStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
 	if collection.Name() != "RHStakingPool" {
