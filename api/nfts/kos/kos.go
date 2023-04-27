@@ -38,51 +38,23 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 	}
 
 	totalIDs := len(ownedKeyIds) + len(ownedKeychainIds) + len(ownedSuperiorKeychainIds)
-	metadataCh := make(chan *models.KOSSimplifiedMetadata, totalIDs)
-	doneCh := make(chan bool)
+	allIds := make([]int, 0, totalIDs)
 
-	go func() {
-		for _, id := range ownedKeyIds {
-			go func(tokenId int) {
-				metadata, err := FetchSimplifiedMetadata(tokenId)
-				if err != nil {
-					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
-				} else {
-					metadataCh <- metadata
-				}
-				doneCh <- true
-			}(int(id.Int64()))
-		}
-
-		for _, id := range ownedKeychainIds {
-			go func(tokenId int) {
-				metadata, err := FetchSimplifiedMetadata(tokenId)
-				if err != nil {
-					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
-				} else {
-					metadataCh <- metadata
-				}
-				doneCh <- true
-			}(int(id.Int64()))
-		}
-
-		for _, id := range ownedSuperiorKeychainIds {
-			go func(tokenId int) {
-				metadata, err := FetchSimplifiedMetadata(tokenId)
-				if err != nil {
-					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
-				} else {
-					metadataCh <- metadata
-				}
-				doneCh <- true
-			}(int(id.Int64()))
-		}
-	}()
-
-	for i := 0; i < totalIDs; i++ {
-		<-doneCh
+	for _, id := range ownedKeyIds {
+		allIds = append(allIds, int(id.Int64()))
 	}
-	close(metadataCh)
+	for _, id := range ownedKeychainIds {
+		allIds = append(allIds, int(id.Int64()))
+	}
+	for _, id := range ownedSuperiorKeychainIds {
+		allIds = append(allIds, int(id.Int64()))
+	}
+
+	// Fetch metadata concurrently
+	allMetadata, err := UtilsKOS.FetchSimplifiedMetadataConcurrent(allIds)
+	if err != nil {
+		return nil, err
+	}
 
 	// collect metadata results
 	var keyMetadata []*models.KOSSimplifiedMetadata
@@ -98,7 +70,7 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 		return false
 	}
 
-	for metadata := range metadataCh {
+	for _, metadata := range allMetadata {
 		tokenID := metadata.TokenID
 		switch {
 		case containsBigInt(ownedKeyIds, big.NewInt(int64(tokenID))):
@@ -182,6 +154,166 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 		SuperiorKeychainData: superiorKeychainData,
 	}, nil
 }
+
+// func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInventory, error) {
+// 	ownedKeyIds, err := UtilsKOS.OwnerIDs(wallet)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	ownedKeychainIds, err := UtilsKeychain.OwnerIDs(wallet)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	ownedSuperiorKeychainIds, err := UtilsSuperiorKeychain.OwnerIDs(wallet)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	totalIDs := len(ownedKeyIds) + len(ownedKeychainIds) + len(ownedSuperiorKeychainIds)
+// 	metadataCh := make(chan *models.KOSSimplifiedMetadata, totalIDs)
+// 	doneCh := make(chan bool)
+
+// 	go func() {
+// 		for _, id := range ownedKeyIds {
+// 			go func(tokenId int) {
+// 				metadata, err := FetchSimplifiedMetadata(tokenId)
+// 				if err != nil {
+// 					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+// 				} else {
+// 					metadataCh <- metadata
+// 				}
+// 				doneCh <- true
+// 			}(int(id.Int64()))
+// 		}
+
+// 		for _, id := range ownedKeychainIds {
+// 			go func(tokenId int) {
+// 				metadata, err := FetchSimplifiedMetadata(tokenId)
+// 				if err != nil {
+// 					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+// 				} else {
+// 					metadataCh <- metadata
+// 				}
+// 				doneCh <- true
+// 			}(int(id.Int64()))
+// 		}
+
+// 		for _, id := range ownedSuperiorKeychainIds {
+// 			go func(tokenId int) {
+// 				metadata, err := FetchSimplifiedMetadata(tokenId)
+// 				if err != nil {
+// 					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+// 				} else {
+// 					metadataCh <- metadata
+// 				}
+// 				doneCh <- true
+// 			}(int(id.Int64()))
+// 		}
+// 	}()
+
+// 	for i := 0; i < totalIDs; i++ {
+// 		<-doneCh
+// 	}
+// 	close(metadataCh)
+
+// 	// collect metadata results
+// 	var keyMetadata []*models.KOSSimplifiedMetadata
+// 	var keychainMetadata []*models.KOSSimplifiedMetadata
+// 	var superiorKeychainMetadata []*models.KOSSimplifiedMetadata
+
+// 	containsBigInt := func(s []*big.Int, val *big.Int) bool {
+// 		for _, v := range s {
+// 			if v.Cmp(val) == 0 {
+// 				return true
+// 			}
+// 		}
+// 		return false
+// 	}
+
+// 	for metadata := range metadataCh {
+// 		tokenID := metadata.TokenID
+// 		switch {
+// 		case containsBigInt(ownedKeyIds, big.NewInt(int64(tokenID))):
+// 			keyMetadata = append(keyMetadata, metadata)
+// 		case containsBigInt(ownedKeychainIds, big.NewInt(int64(tokenID))):
+// 			keychainMetadata = append(keychainMetadata, metadata)
+// 		case containsBigInt(ownedSuperiorKeychainIds, big.NewInt(int64(tokenID))):
+// 			superiorKeychainMetadata = append(superiorKeychainMetadata, metadata)
+// 		}
+// 	}
+
+// 	// check if any of the keys, keychains and/or superior keychains are staked in the specified staking pool
+// 	// Parallelize staking checks
+// 	keyDataCh := make(chan *models.KeyData, len(keyMetadata))
+// 	keychainDataCh := make(chan *models.KeychainData, len(keychainMetadata))
+// 	superiorKeychainDataCh := make(chan *models.KeychainData, len(superiorKeychainMetadata))
+
+// 	for _, metadata := range keyMetadata {
+// 		go func(md *models.KOSSimplifiedMetadata) {
+// 			isStaked, err := UtilsKOS.CheckIfKeyStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md)
+// 			if err != nil {
+// 				log.Printf("Error checking if key is staked for token ID %d: %v\n", md.TokenID, err)
+// 			} else {
+// 				keyDataCh <- &models.KeyData{
+// 					KeyMetadata: md,
+// 					Stakeable:   !isStaked,
+// 				}
+// 			}
+// 		}(metadata)
+// 	}
+
+// 	for _, metadata := range keychainMetadata {
+// 		go func(md *models.KOSSimplifiedMetadata) {
+// 			isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md.TokenID)
+// 			if err != nil {
+// 				log.Printf("Error checking if keychain is staked for token ID %d: %v\n", md.TokenID, err)
+// 			} else {
+// 				keychainDataCh <- &models.KeychainData{
+// 					KeychainID: md.TokenID,
+// 					Stakeable:  !isStaked,
+// 				}
+// 			}
+// 		}(metadata)
+// 	}
+
+// 	for _, metadata := range superiorKeychainMetadata {
+// 		go func(md *models.KOSSimplifiedMetadata) {
+// 			isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md.TokenID)
+// 			if err != nil {
+// 				log.Printf("Error checking if superior keychain is staked for token ID %d: %v\n", md.TokenID, err)
+// 			} else {
+// 				superiorKeychainDataCh <- &models.KeychainData{
+// 					KeychainID: md.TokenID,
+// 					Stakeable:  !isStaked,
+// 				}
+// 			}
+// 		}(metadata)
+// 	}
+
+// 	// Collect staking check results
+// 	keyData := make([]*models.KeyData, 0, len(keyMetadata))
+// 	keychainData := make([]*models.KeychainData, 0, len(keychainMetadata))
+// 	superiorKeychainData := make([]*models.KeychainData, 0, len(superiorKeychainMetadata))
+
+// 	for i := 0; i < len(keyMetadata); i++ {
+// 		keyData = append(keyData, <-keyDataCh)
+// 	}
+
+// 	for i := 0; i < len(keychainMetadata); i++ {
+// 		keychainData = append(keychainData, <-keychainDataCh)
+// 	}
+
+// 	for i := 0; i < len(superiorKeychainMetadata); i++ {
+// 		superiorKeychainData = append(superiorKeychainData, <-superiorKeychainDataCh)
+// 	}
+
+// 	return &models.KOSStakerInventory{
+// 		Wallet:               wallet,
+// 		KeyData:              keyData,
+// 		KeychainData:         keychainData,
+// 		SuperiorKeychainData: superiorKeychainData,
+// 	}, nil
+// }
 
 // func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInventory, error) {
 // 	// first, get the owned key, keychain and superior keychain IDs
