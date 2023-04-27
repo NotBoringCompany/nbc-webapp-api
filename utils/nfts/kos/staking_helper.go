@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
@@ -155,7 +156,7 @@ func UpdateRewardClaimedToTrue(collection *mongo.Collection, stakingPoolId, subp
 		return err
 	}
 
-	fmt.Printf("Updated subpool ID %d's (from staking pool ID %d) rewardClaimed field to true", subpoolId, stakingPoolId)
+	log.Printf("Updated subpool ID %d's (from staking pool ID %d) rewardClaimed field to true", subpoolId, stakingPoolId)
 	return nil
 }
 
@@ -190,7 +191,7 @@ func CloseSubpoolsOnStakeEnd(collection *mongo.Collection) error {
 			subpool.ExitTime = now
 			stakingPool.ClosedSubpools = append(stakingPool.ClosedSubpools, subpool)
 
-			fmt.Printf("moved subpool %v from staking pool %v to closed subpools \n", subpool.SubpoolID, stakingPool.StakingPoolID)
+			log.Printf("moved subpool %v from staking pool %v to closed subpools \n", subpool.SubpoolID, stakingPool.StakingPoolID)
 		}
 
 		// clear `ActiveSubpools` and update the document.
@@ -202,7 +203,7 @@ func CloseSubpoolsOnStakeEnd(collection *mongo.Collection) error {
 			return err
 		}
 
-		fmt.Printf("Updated staking pool %v and shifted all its active subpools to closed subpools", result.UpsertedID)
+		log.Printf("Updated staking pool %v and shifted all its active subpools to closed subpools", result.UpsertedID)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -228,10 +229,10 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 
 	reward := &models.Reward{Name: rewardName, Amount: tokensToGive}
 
-	fmt.Printf("reward to give to staker: %v \n", reward)
+	log.Printf("reward to give to staker: %v \n", reward)
 
 	if !exists {
-		fmt.Printf("staker with wallet %v does not exist. creating new staker... \n", wallet)
+		log.Printf("staker with wallet %v does not exist. creating new staker... \n", wallet)
 
 		// add a new staker with the given wallet and add `tokensToGive` to the staker's wallet.
 		stakerObjId, err := AddStaker(collection, wallet)
@@ -256,7 +257,7 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 
 		return nil
 	} else { // if the staker already exists, we first do multiple checks.
-		fmt.Printf("staker with wallet %v already exists. updating staker... \n", wallet)
+		log.Printf("staker with wallet %v already exists. updating staker... \n", wallet)
 
 		filter := bson.M{"wallet": wallet}
 
@@ -283,7 +284,7 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 
 			return nil
 		} else {
-			fmt.Printf("staker with wallet %v already has an existing `earnedRewards` field. checking if reward with name %v already exists... \n", wallet, rewardName)
+			log.Printf("staker with wallet %v already has an existing `earnedRewards` field. checking if reward with name %v already exists... \n", wallet, rewardName)
 
 			// if the staker already has an existing `earnedRewards` field, we need to check if the reward with the same name already exists.
 			// if it does, we just add the amount to the existing reward.
@@ -325,7 +326,7 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 
 	}
 
-	fmt.Printf("Successfully added %f tokens to %s's wallet.\n", tokensToGive, wallet)
+	log.Printf("Successfully added %f tokens to %s's wallet.\n", tokensToGive, wallet)
 	return nil
 }
 
@@ -411,7 +412,7 @@ func UpdateStakerBannedData(collection *mongo.Collection, stakerId *primitive.Ob
 			return err
 		}
 
-		fmt.Printf("banned staker %s. they have been banned %d times thus far", stakerId.Hex(), staker.BannedData.BannedCount)
+		log.Printf("banned staker %s. they have been banned %d times thus far", stakerId.Hex(), staker.BannedData.BannedCount)
 	} else { // if staker does not have a BannedData instance, we create one and set the LastBanTime to now.
 		// create a new BannedData instance
 		bannedData := &models.BannedData{
@@ -426,7 +427,7 @@ func UpdateStakerBannedData(collection *mongo.Collection, stakerId *primitive.Ob
 			return fmt.Errorf("failed to create staker banned data: %s", err)
 		}
 
-		fmt.Printf("created ban instance and banned staker %s. they have been banned %d times thus far", stakerId.Hex(), bannedData.BannedCount)
+		log.Printf("created ban instance and banned staker %s. they have been banned %d times thus far", stakerId.Hex(), bannedData.BannedCount)
 
 		return nil
 	}
@@ -470,7 +471,7 @@ func UnstakeFromSubpool(collection *mongo.Collection, stakingPoolId, subpoolId i
 		return fmt.Errorf("no subpool with ID %d exists in the ActiveSubpools of staking pool %d", subpoolId, stakingPoolId)
 	}
 
-	fmt.Printf("unstaked subpool %d from staking pool %d", subpoolId, stakingPoolId)
+	log.Printf("unstaked subpool %d from staking pool %d", subpoolId, stakingPoolId)
 	return nil
 }
 
@@ -516,7 +517,7 @@ func UnstakeFromStakingPool(collection *mongo.Collection, stakingPoolId int, sta
 		return fmt.Errorf("no subpool exists for staker with wallet %s in staking pool %d", stakerWallet, stakingPoolId)
 	}
 
-	fmt.Printf("unstaked all subpools for staker %s from staking pool %d", stakerWallet, stakingPoolId)
+	log.Printf("unstaked all subpools for staker %s from staking pool %d", stakerWallet, stakingPoolId)
 	return nil
 }
 
@@ -631,7 +632,7 @@ func BanSubpool(collection *mongo.Collection, stakingPoolId, subpoolId int) erro
 				return err
 			}
 
-			fmt.Printf("subpool %d has been banned from staking pool %d", subpoolId, stakingPoolId)
+			log.Printf("subpool %d has been banned from staking pool %d", subpoolId, stakingPoolId)
 			return nil
 		}
 	}
@@ -798,7 +799,7 @@ func UpdateTotalYieldPoints(collection *mongo.Collection) error {
 		}
 	}
 
-	fmt.Printf("Updated total yield points for %d staking pools\n", len(stakingPools))
+	log.Printf("Updated total yield points for %d staking pools\n", len(stakingPools))
 	return nil
 }
 
@@ -1155,7 +1156,7 @@ func AddSubpool(
 		return err
 	}
 	if !exists {
-		fmt.Printf("staker with address %v does not exist. creating a new staker instance...", stakerWallet)
+		log.Printf("staker with address %v does not exist. creating a new staker instance...", stakerWallet)
 		stakerObjId, err = AddStaker(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet) // create a new staker instance and get the object ID.
 		if err != nil {
 			return err
@@ -1201,7 +1202,7 @@ func AddSubpool(
 		return err
 	}
 
-	fmt.Printf("Added Subpool ID %d to Staking Pool ID %d. Updated %d document(s)", nextSubpoolId, stakingPoolId, update.ModifiedCount)
+	log.Printf("Added Subpool ID %d to Staking Pool ID %d. Updated %d document(s)", nextSubpoolId, stakingPoolId, update.ModifiedCount)
 
 	return nil
 }

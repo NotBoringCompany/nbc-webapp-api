@@ -1,7 +1,7 @@
 package utils_superiorkeychain
 
 import (
-	"fmt"
+	"log"
 	"math/big"
 	UtilsNFT "nbc-backend-api-v2/utils/nfts"
 )
@@ -58,6 +58,6 @@ func VerifyOwnership(address string, ids []int) (bool, error) {
 		}
 	}
 
-	fmt.Printf("All superior keychain `ids` are owned by `address` %s", address)
+	log.Printf("All superior keychain `ids` are owned by `address` %s", address)
 	return true, nil
 }

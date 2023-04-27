@@ -3,7 +3,7 @@ package utils_kos
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
 	"time"
@@ -65,7 +65,7 @@ func VerifyStakerOwnership(collection *mongo.Collection) error {
 					return err
 				}
 
-				fmt.Printf("verifying complete. staker does NOT own at least one of the staked keys anymore. ban imposed.")
+				log.Printf("verifying complete. staker does NOT own at least one of the staked keys anymore. ban imposed.")
 				return nil
 			}
 		}
@@ -91,7 +91,7 @@ func VerifyStakerOwnership(collection *mongo.Collection) error {
 					return err
 				}
 
-				fmt.Printf("verifying complete. staker does NOT own at least one of the staked keys anymore. ban imposed.")
+				log.Printf("verifying complete. staker does NOT own at least one of the staked keys anymore. ban imposed.")
 				return nil
 			}
 		}
@@ -117,12 +117,12 @@ func VerifyStakerOwnership(collection *mongo.Collection) error {
 					return err
 				}
 
-				fmt.Printf("verifying complete. staker does NOT own at least one of the staked keys anymore. ban imposed.")
+				log.Printf("verifying complete. staker does NOT own at least one of the staked keys anymore. ban imposed.")
 				return nil
 			}
 		}
 
-		fmt.Printf("verifying complete. staker still owns all staked items for subpool %d of staking pool %d", subpool.SubpoolID, subpool.StakingPoolID)
+		log.Printf("verifying complete. staker still owns all staked items for subpool %d of staking pool %d", subpool.SubpoolID, subpool.StakingPoolID)
 	}
 
 	return nil

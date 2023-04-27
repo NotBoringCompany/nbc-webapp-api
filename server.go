@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	ApiKOS "nbc-backend-api-v2/api/nfts/kos"
 	"nbc-backend-api-v2/configs"
 	RoutesNFTs "nbc-backend-api-v2/routes/nfts"
 	"os"
@@ -10,10 +12,10 @@ import (
 )
 
 func main() {
-	// err := configs.LoadEnv()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	err := configs.LoadEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
@@ -27,6 +29,11 @@ func main() {
 	configs.ConnectMongo()
 
 	RoutesNFTs.KOSRoutes(app)
+
+	// SCHEDULERS
+	ApiKOS.UpdateTotalYieldPointsScheduler().Start()
+	ApiKOS.CloseSubpoolsOnStakeEndScheduler().Start()
+	ApiKOS.VerifyStakerOwnershipScheduler().Start()
 
 	app.Listen(":" + port)
 }

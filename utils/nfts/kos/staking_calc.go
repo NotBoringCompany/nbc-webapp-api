@@ -3,7 +3,7 @@ package utils_kos
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 	"math"
 	"nbc-backend-api-v2/models"
 	"strings"
@@ -41,7 +41,7 @@ func CalcSubpoolTokenShare(collection *mongo.Collection, stakingPoolId, subpoolI
 	// calculate the reward share for a specific subpool of ID `subpoolId` for a specific staking pool with ID `stakingPoolId`
 	rewardShare := math.Round(accSubpoolPoints/totalSubpoolPoints*totalTokenReward*100) / 100
 
-	fmt.Printf("Reward share for subpool %d of staking pool %d: %f\n", subpoolId, stakingPoolId, rewardShare)
+	log.Printf("Reward share for subpool %d of staking pool %d: %f\n", subpoolId, stakingPoolId, rewardShare)
 
 	return rewardShare, nil
 }
