@@ -9,11 +9,12 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"sync"
 )
 
 var (
-	client        = &http.Client{}                    // use a global HTTP client to avoid creating a new one for each request
-	metadataCache = make(map[int]*models.KOSMetadata) // use a map to cache metadata for each token ID
+	client        = &http.Client{}
+	metadataCache sync.Map
 )
 
 /*
@@ -23,8 +24,8 @@ var (
 */
 func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 	// check if metadata is in cache
-	if metadata, ok := metadataCache[tokenId]; ok {
-		return metadata, nil
+	if metadata, ok := metadataCache.Load(tokenId); ok {
+		return metadata.(*models.KOSMetadata), nil
 	}
 
 	url := os.Getenv("KOS_URI") + fmt.Sprint(tokenId) + ".json"
@@ -54,7 +55,7 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 	}
 
 	// cache metadata
-	metadataCache[tokenId] = &metadata
+	metadataCache.Store(tokenId, &metadata)
 
 	return &metadata, nil
 }
@@ -102,7 +103,13 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 
 	`tokenId` the token ID of the Key
 */
+
 func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
+	// Check if simplified metadata is in cache
+	if metadata, ok := metadataCache.Load(tokenId); ok {
+		return metadata.(*models.KOSSimplifiedMetadata), nil
+	}
+
 	metadata, err := FetchMetadata(tokenId)
 	if err != nil {
 		return nil, err
@@ -115,6 +122,9 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 		LuckTrait:      metadata.Attributes[0].Value.(float64),
 		LuckBoostTrait: 1 + (metadata.Attributes[1].Value.(float64) / 100),
 	}
+
+	// Cache simplified metadata
+	metadataCache.Store(tokenId, simplifiedMetadata)
 
 	return simplifiedMetadata, nil
 }
