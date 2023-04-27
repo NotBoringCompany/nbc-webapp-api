@@ -8,7 +8,6 @@ import (
 	UtilsKeychain "nbc-backend-api-v2/utils/nfts/keychain"
 	UtilsKOS "nbc-backend-api-v2/utils/nfts/kos"
 	UtilsSuperiorKeychain "nbc-backend-api-v2/utils/nfts/superior_keychain"
-	"sync"
 
 	"github.com/robfig/cron/v3"
 )
@@ -25,7 +24,6 @@ Returns the following:
 3. checks if any of the keys, keychains and/or superior keychains are staked (in the staking pool with the `stakingPoolId`)
 */
 func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInventory, error) {
-	// first, get the owned key, keychain and superior keychain IDs
 	ownedKeyIds, err := UtilsKOS.OwnerIDs(wallet)
 	if err != nil {
 		return nil, err
@@ -39,81 +37,76 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 		return nil, err
 	}
 
-	// set up wait group to ensure all goroutines complete before proceeding
-	var wg sync.WaitGroup
-	wg.Add(len(ownedKeyIds) + len(ownedKeychainIds) + len(ownedSuperiorKeychainIds))
+	totalIDs := len(ownedKeyIds) + len(ownedKeychainIds) + len(ownedSuperiorKeychainIds)
+	metadataCh := make(chan *models.KOSSimplifiedMetadata, totalIDs)
+	doneCh := make(chan bool)
 
-	// fetch metadata for all key IDs concurrently
-	keyMetadataCh := make(chan *models.KOSSimplifiedMetadata, len(ownedKeyIds))
-	for _, id := range ownedKeyIds {
-		go func(tokenId int) {
-			metadata, err := FetchSimplifiedMetadata(tokenId)
-			if err != nil {
-				log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
-			} else {
-				keyMetadataCh <- metadata
-			}
-			wg.Done()
-		}(int(id.Int64()))
+	go func() {
+		for _, id := range ownedKeyIds {
+			go func(tokenId int) {
+				metadata, err := FetchSimplifiedMetadata(tokenId)
+				if err != nil {
+					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+				} else {
+					metadataCh <- metadata
+				}
+				doneCh <- true
+			}(int(id.Int64()))
+		}
+
+		for _, id := range ownedKeychainIds {
+			go func(tokenId int) {
+				metadata, err := FetchSimplifiedMetadata(tokenId)
+				if err != nil {
+					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+				} else {
+					metadataCh <- metadata
+				}
+				doneCh <- true
+			}(int(id.Int64()))
+		}
+
+		for _, id := range ownedSuperiorKeychainIds {
+			go func(tokenId int) {
+				metadata, err := FetchSimplifiedMetadata(tokenId)
+				if err != nil {
+					log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
+				} else {
+					metadataCh <- metadata
+				}
+				doneCh <- true
+			}(int(id.Int64()))
+		}
+	}()
+
+	for i := 0; i < totalIDs; i++ {
+		<-doneCh
 	}
-
-	// fetch metadata for all keychain IDs concurrently
-	keychainMetadataCh := make(chan *models.KOSSimplifiedMetadata, len(ownedKeychainIds))
-	for _, id := range ownedKeychainIds {
-		go func(tokenId int) {
-			metadata, err := FetchSimplifiedMetadata(tokenId)
-			if err != nil {
-				log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
-			} else {
-				keychainMetadataCh <- metadata
-			}
-			wg.Done()
-		}(int(id.Int64()))
-	}
-
-	// fetch metadata for all superior keychain IDs concurrently
-	superiorKeychainMetadataCh := make(chan *models.KOSSimplifiedMetadata, len(ownedSuperiorKeychainIds))
-	for _, id := range ownedSuperiorKeychainIds {
-		go func(tokenId int) {
-			metadata, err := FetchSimplifiedMetadata(tokenId)
-			if err != nil {
-				log.Printf("Error fetching metadata for token ID %d: %v\n", tokenId, err)
-			} else {
-				superiorKeychainMetadataCh <- metadata
-			}
-			wg.Done()
-		}(int(id.Int64()))
-	}
-
-	// wait for all goroutines to complete before proceeding
-	wg.Wait()
+	close(metadataCh)
 
 	// collect metadata results
 	var keyMetadata []*models.KOSSimplifiedMetadata
 	var keychainMetadata []*models.KOSSimplifiedMetadata
 	var superiorKeychainMetadata []*models.KOSSimplifiedMetadata
-	for i := 0; i < len(ownedKeyIds); i++ {
-		select {
-		case metadata := <-keyMetadataCh:
+
+	containsBigInt := func(s []*big.Int, val *big.Int) bool {
+		for _, v := range s {
+			if v.Cmp(val) == 0 {
+				return true
+			}
+		}
+		return false
+	}
+
+	for metadata := range metadataCh {
+		tokenID := metadata.TokenID
+		switch {
+		case containsBigInt(ownedKeyIds, big.NewInt(int64(tokenID))):
 			keyMetadata = append(keyMetadata, metadata)
-		default:
-			// skip if no metadata available
-		}
-	}
-	for i := 0; i < len(ownedKeychainIds); i++ {
-		select {
-		case metadata := <-keychainMetadataCh:
+		case containsBigInt(ownedKeychainIds, big.NewInt(int64(tokenID))):
 			keychainMetadata = append(keychainMetadata, metadata)
-		default:
-			// skip if no metadata available
-		}
-	}
-	for i := 0; i < len(ownedSuperiorKeychainIds); i++ {
-		select {
-		case metadata := <-superiorKeychainMetadataCh:
+		case containsBigInt(ownedSuperiorKeychainIds, big.NewInt(int64(tokenID))):
 			superiorKeychainMetadata = append(superiorKeychainMetadata, metadata)
-		default:
-			// skip if no metadata available
 		}
 	}
 
