@@ -20,7 +20,11 @@ func main() {
 		port = "3000"
 	}
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		Prefork:      true,
+		ServerHeader: "NBC Backend API",
+		AppName:      "NBC Backend API",
+	})
 
 	app.Use(cors.New())
 
