@@ -757,6 +757,52 @@ func GetAllStakingPools(collection *mongo.Collection) ([]*models.StakingPool, er
 }
 
 /*
+Updates the `TotalYieldPoints` field across all staking pools.
+*/
+func UpdateTotalYieldPoints(collection *mongo.Collection) error {
+	// gets all staking pools
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	var stakingPools []*models.StakingPool
+	cursor, err := collection.Find(context.Background(), bson.D{})
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.Background())
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return err
+		}
+		stakingPools = append(stakingPools, &stakingPool)
+	}
+	if err := cursor.Err(); err != nil {
+		return err
+	}
+
+	for _, stakingPool := range stakingPools {
+		var totalYieldPoints float64
+		for _, subpool := range stakingPool.ActiveSubpools {
+			totalYieldPoints += subpool.SubpoolPoints
+		}
+		for _, subpool := range stakingPool.ClosedSubpools {
+			totalYieldPoints += subpool.SubpoolPoints
+		}
+
+		// update the total yield points for this staking pool
+		_, err := collection.UpdateOne(context.Background(), bson.D{{"stakingPoolID", stakingPool.StakingPoolID}}, bson.D{{"$set", bson.D{{"totalYieldPoints", totalYieldPoints}}}})
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("Updated total yield points for %d staking pools\n", len(stakingPools))
+	return nil
+}
+
+/*
 Gets all active subpools from each staking pool in `RHStakingPool` and returns them as a slice of `StakingSubpool` instances.
 */
 func GetAllActiveSubpools(collection *mongo.Collection) ([]*models.StakingSubpoolWithID, error) {

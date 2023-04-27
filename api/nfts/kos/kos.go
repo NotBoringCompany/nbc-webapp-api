@@ -223,11 +223,50 @@ func GetAllStakedSuperiorKeychainIDs(stakingPoolId int) ([]int, error) {
 	return UtilsKOS.GetAllStakedSuperiorKeychainIDs(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId)
 }
 
+/*
+Gets the detailed subpool points (how it was calculated)
+*/
+func DetailedSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) *models.DetailedSubpoolPoints {
+	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
+
+	var luckAndLuckBoostSum float64
+	for _, metadata := range metadatas {
+		luckAndLuckBoostSum += (metadata.LuckTrait * metadata.LuckBoostTrait)
+	}
+
+	keyCombo := UtilsKOS.CalculateKeyCombo(metadatas)
+	keychainCombo := UtilsKOS.CalculateKeychainCombo(keychainId, superiorKeychainId)
+
+	return &models.DetailedSubpoolPoints{
+		LuckAndLuckBoostSum: luckAndLuckBoostSum,
+		KeyCombo:            keyCombo,
+		KeychainCombo:       keychainCombo,
+		Total:               CalculateSubpoolPoints(keyIds, keychainId, superiorKeychainId),
+	}
+}
+
 /*********************
 
 CRON SCHEDULER FUNCTIONS
 
 **********************/
+
+/*
+Updates the total yield points of all active staking pools every 1 minute.
+*/
+func UpdateTotalYieldPointsScheduler() *cron.Cron {
+	scheduler := cron.New()
+
+	// runs every 1 minute
+	scheduler.AddFunc("*/1 * * * *", func() {
+		err := UtilsKOS.UpdateTotalYieldPoints(configs.GetCollections(configs.DB, "RHStakingPool"))
+		if err != nil {
+			panic(err)
+		}
+	})
+
+	return scheduler
+}
 
 /*
 Adds a scheduler to `CloseSubpoolsOnStakeEnd` to run it every hour.
@@ -261,28 +300,6 @@ func VerifyStakerOwnershipScheduler() *cron.Cron {
 	})
 
 	return scheduler
-}
-
-/*
-Gets the detailed subpool points (how it was calculated)
-*/
-func DetailedSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) *models.DetailedSubpoolPoints {
-	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
-
-	var luckAndLuckBoostSum float64
-	for _, metadata := range metadatas {
-		luckAndLuckBoostSum += (metadata.LuckTrait * metadata.LuckBoostTrait)
-	}
-
-	keyCombo := UtilsKOS.CalculateKeyCombo(metadatas)
-	keychainCombo := UtilsKOS.CalculateKeychainCombo(keychainId, superiorKeychainId)
-
-	return &models.DetailedSubpoolPoints{
-		LuckAndLuckBoostSum: luckAndLuckBoostSum,
-		KeyCombo:            keyCombo,
-		KeychainCombo:       keychainCombo,
-		Total:               CalculateSubpoolPoints(keyIds, keychainId, superiorKeychainId),
-	}
 }
 
 /*********************
