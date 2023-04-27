@@ -40,6 +40,25 @@ func KOSRoutes(app *fiber.App) {
 			Data:    &fiber.Map{"inventory": res},
 		})
 	})
+
+	// FetchStakingPoolData route
+	app.Get("/kos/fetch-staking-pools", func(c *fiber.Ctx) error {
+		res, err := ApiKOS.FetchStakingPoolData()
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully fetch staking pool data: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully fetched staking pool data.",
+			Data:    &fiber.Map{"stakingPools": res},
+		})
+	})
+
 	// FetchMetadata route
 	app.Get("/kos/fetch-metadata/:tokenId", func(c *fiber.Ctx) error {
 		tokenId := c.Params("tokenId")

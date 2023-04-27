@@ -539,6 +539,65 @@ func GetStartTimeOfStakingPool(collection *mongo.Collection, stakingPoolId int) 
 }
 
 /*
+Gets all currently active staking pools.
+*/
+func GetAllActiveStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("collection must be RHStakingPool")
+	}
+	currentTime := time.Now()
+	// filters through all staking pools that allow entry now and have not ended yet
+	filter := bson.M{
+		"$and": []bson.M{
+			{"entryAllowance": bson.M{"$lte": currentTime}},
+			{"endTime": bson.M{"$gt": currentTime}},
+		},
+	}
+
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var stakingPools []*models.StakingPool
+	if err = cursor.All(context.Background(), &stakingPools); err != nil {
+		return nil, err
+	}
+
+	return stakingPools, nil
+}
+
+/*
+Gets all currently closed staking pools.
+*/
+func GetAllClosedStakingPools(collection *mongo.Collection) ([]*models.StakingPool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("collection must be RHStakingPool")
+	}
+	currentTime := time.Now()
+
+	filter := bson.M{
+		"endTime": bson.M{
+			"$lte": currentTime,
+		},
+	}
+
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var stakingPools []*models.StakingPool
+	if err = cursor.All(context.Background(), &stakingPools); err != nil {
+		return nil, err
+	}
+
+	return stakingPools, nil
+}
+
+/*
 Bans a subpool from being able to claim rewards, removes it from `ActiveSubpools` and moves it to `ClosedSubpools`.
 if the subpool is already in `ClosedSubpools` (i.e. not in ActiveSubpools), this function will return an error.
 */

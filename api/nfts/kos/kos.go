@@ -114,7 +114,28 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 		KeychainData:         keychainData,
 		SuperiorKeychainData: superiorKeychainData,
 	}, nil
+}
 
+/*
+Returns all active and closed staking pools, each with their respective staking pool data
+*/
+func FetchStakingPoolData() (*models.AllStakingPools, error) {
+	// we first fetch all active staking pools.
+	activePools, err := UtilsKOS.GetAllActiveStakingPools(configs.GetCollections(configs.DB, "RHStakingPool"))
+	if err != nil {
+		return nil, err
+	}
+
+	// we then fetch all closed staking pools.
+	closedPools, err := UtilsKOS.GetAllClosedStakingPools(configs.GetCollections(configs.DB, "RHStakingPool"))
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.AllStakingPools{
+		ActivePools: activePools,
+		ClosedPools: closedPools,
+	}, nil
 }
 
 /********************

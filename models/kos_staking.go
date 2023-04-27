@@ -7,6 +7,14 @@ import (
 )
 
 /*
+Returns all active and closed staking pools, each with their respective staking pool data
+*/
+type AllStakingPools struct {
+	ActivePools []*StakingPool `json:"activePools,omitempty"` // all active staking pools
+	ClosedPools []*StakingPool `json:"closedPools,omitempty"` // all closed staking pools
+}
+
+/*
 Defines the `StakingPool` collection which is used to store all staking pool data.
 */
 type StakingPool struct {
