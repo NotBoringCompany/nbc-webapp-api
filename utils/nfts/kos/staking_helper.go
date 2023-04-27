@@ -356,7 +356,7 @@ func GetStakerInstance(collection *mongo.Collection, wallet string) (*primitive.
 		return nil, errors.New("collection must be RHStakerData")
 	}
 
-	filter := bson.M{"wallet": wallet}
+	filter := bson.M{"wallet": strings.ToLower(wallet)}
 
 	var staker models.Staker
 	err := collection.FindOne(context.Background(), filter).Decode(&staker)
