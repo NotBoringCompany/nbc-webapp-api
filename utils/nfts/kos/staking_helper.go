@@ -43,7 +43,7 @@ func AddStaker(collection *mongo.Collection, wallet string) (*primitive.ObjectID
 
 	// create a new staker instance and add it to `RHStakerData`
 	staker := &models.Staker{
-		Wallet: wallet,
+		Wallet: strings.ToLower(wallet),
 	}
 
 	result, err := collection.InsertOne(context.Background(), staker)

@@ -48,6 +48,47 @@ func CalcSubpoolTokenShare(collection *mongo.Collection, stakingPoolId, subpoolI
 }
 
 /*
+ONLY FOR TOKEN REWARDS: Calculates the total token share of a staker for a specific staking pool with ID `stakingPoolId`.
+*/
+func CalcTotalTokenShare(collection *mongo.Collection, stakingPoolId int, stakerWallet string) (float64, error) {
+	if collection.Name() != "RHStakingPool" {
+		return 0, errors.New("collection must be RHStakingPool")
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	var stakingPool *models.StakingPool
+	if err := collection.FindOne(context.Background(), filter).Decode(&stakingPool); err != nil {
+		return 0, err
+	}
+
+	// get the staker's object ID
+	stakerObjectId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
+	if err != nil {
+		return 0, err
+	}
+
+	// find all active subpools belonging to the staker
+	var subpools []*models.StakingSubpool
+	for _, subpool := range stakingPool.ActiveSubpools {
+		if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
+			subpools = append(subpools, subpool)
+		}
+	}
+
+	// since closed subpools don't count into the staker's total reward share, we only get from the active subpools.
+	var totalTokenShare float64
+	for _, subpool := range subpools {
+		rewardShare, err := CalcSubpoolTokenShare(collection, stakingPoolId, subpool.SubpoolID)
+		if err != nil {
+			return 0, err
+		}
+		totalTokenShare += rewardShare
+	}
+
+	return totalTokenShare, nil
+}
+
+/*
 Calculates the subpool points generated for the user's subpool based on the keys and keychain/superior keychain staked.
 
 	`keys` are the keys staked

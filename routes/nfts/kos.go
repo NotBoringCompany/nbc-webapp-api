@@ -70,6 +70,35 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	// CalculateTotalTokenShare route
+	app.Get("/kos/calculate-total-token-share/:wallet/:stakingPoolId", func(c *fiber.Ctx) error {
+		wallet := c.Params("wallet")
+		stakingPoolId := c.Params("stakingPoolId")
+		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given stakingPoolId to int.",
+				Data:    nil,
+			})
+		}
+
+		res, err := ApiKOS.CalcTotalTokenShare(stakingPoolIdInt, wallet)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully calculate total token share for given wallet: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully calculated total token share for given wallet.",
+			Data:    &fiber.Map{"totalTokenShare": res},
+		})
+	})
+
 	// GetStakingPoolData route
 	app.Get("/kos/staking-pool-data/:stakingPoolId", func(c *fiber.Ctx) error {
 		id := c.Params("stakingPoolId")

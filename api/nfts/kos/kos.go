@@ -291,6 +291,10 @@ func CalculateStakerTotalSubpoolPoints(stakingPoolId int, stakerWallet string) (
 	return UtilsKOS.CalculateStakerTotalSubpoolPoints(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet)
 }
 
+func CalcTotalTokenShare(stakingPoolId int, stakerWallet string) (float64, error) {
+	return UtilsKOS.CalcTotalTokenShare(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet)
+}
+
 func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
 	return UtilsKOS.FetchSimplifiedMetadata(tokenId)
 }
