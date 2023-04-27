@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"math"
+	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
 	"strings"
 
@@ -68,6 +69,51 @@ func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainId, su
 
 	// call `BaseSubpoolPoints`
 	return BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo)
+}
+
+/*
+Calculates the total subpool points that a staker has accumulated for a specific staking pool.
+
+	`stakingPoolId` is the ID of the staking pool
+	`stakerWallet` is the wallet of the staker
+*/
+func CalculateStakerTotalSubpoolPoints(collection *mongo.Collection, stakingPoolId int, stakerWallet string) (float64, error) {
+	if collection.Name() != "RHStakingPool" {
+		return 0, errors.New("collection must be RHStakingPool")
+	}
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	var stakingPool *models.StakingPool
+	if err := collection.FindOne(context.Background(), filter).Decode(&stakingPool); err != nil {
+		return 0, err
+	}
+
+	// get the staker's object ID
+	stakerObjectId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
+	if err != nil {
+		return 0, err
+	}
+
+	// find all subpools belonging to the staker
+	var subpools []*models.StakingSubpool
+	for _, subpool := range stakingPool.ActiveSubpools {
+		if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
+			subpools = append(subpools, subpool)
+		}
+	}
+
+	for _, subpool := range stakingPool.ClosedSubpools {
+		if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
+			subpools = append(subpools, subpool)
+		}
+	}
+
+	// add up the total subpool points
+	totalSubpoolPoints := 0.0
+	for _, subpool := range subpools {
+		totalSubpoolPoints += subpool.SubpoolPoints
+	}
+
+	return totalSubpoolPoints, nil
 }
 
 /*
