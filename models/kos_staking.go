@@ -21,7 +21,7 @@ type StakingPool struct {
 	ID               primitive.ObjectID `bson:"_id,omitempty"`              // the object ID of the staking pool
 	StakingPoolID    int                `bson:"stakingPoolID,omitempty"`    // unique ID for each staking pool (starts at 1 for the first staking pool, increments everytime)
 	Reward           Reward             `bson:"reward,omitempty"`           // the reward for staking in this pool
-	TotalYieldPoints int                `bson:"totalYieldPoints,omitempty"` // the total yield points generated across ALL stakers' subpools (calculated from `StakingSubpool`)
+	TotalYieldPoints float64            `bson:"totalYieldPoints,omitempty"` // the total yield points generated across ALL stakers' subpools (calculated from `StakingSubpool`)
 	EntryAllowance   time.Time          `bson:"entryAllowance,omitempty"`   // the time when stakers are allowed to enter the pool (also when the staking pool is created)
 	StartTime        time.Time          `bson:"startTime,omitempty"`        // the start time of the staking pool (where entry is no longer allowed and staking has started)
 	EndTime          time.Time          `bson:"endTime,omitempty"`          // when the staking pool ends (when the staking pool is closed)
