@@ -99,7 +99,14 @@ func KOSRoutes(app *fiber.App) {
 			})
 		}
 
-		res := ApiKOS.FetchMetadata(tokenIdInt)
+		res, err := ApiKOS.FetchMetadata(tokenIdInt)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully fetch metadata for given tokenId: %v", err),
+				Data:    nil,
+			})
+		}
 
 		return c.JSON(&responses.Response{
 			Status:  fiber.StatusOK,
