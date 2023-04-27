@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +14,7 @@ import (
 `ConnectMongo` connects to the MongoDB database and returns a client instance.
 */
 func ConnectMongo() *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
+	client, err := mongo.NewClient(options.Client().ApplyURI(LoadMongoEnv()))
 	if err != nil {
 		log.Fatal(err)
 	}
