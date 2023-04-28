@@ -69,7 +69,7 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 	`tokenId` the token ID of the Key
 */
 
-func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
+func FetchSimplifiedMetadata(tokenId int) (models.KOSSimplifiedMetadata, error) {
 	// // Check if simplified metadata is in cache
 	// if metadata, ok := metadataCache.Load(tokenId); ok {
 	// 	log.Println("Here!")
@@ -78,12 +78,13 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 
 	metadata, err := FetchMetadata(tokenId)
 	if err != nil {
-		return nil, err
+		return models.KOSSimplifiedMetadata{}, err
 	}
 
 	fmt.Println(metadata)
+	fmt.Println("animation url", metadata.AnimationUrl)
 
-	simplifiedMetadata := &models.KOSSimplifiedMetadata{
+	simplifiedMetadata := models.KOSSimplifiedMetadata{
 		TokenID:        tokenId,
 		AnimationUrl:   metadata.AnimationUrl,
 		HouseTrait:     metadata.Attributes[3].Value.(string),
