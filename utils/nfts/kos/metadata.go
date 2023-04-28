@@ -25,6 +25,7 @@ var (
 func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 	// check if metadata is in cache
 	if metadata, ok := metadataCache.Load(tokenId); ok {
+		log.Println(metadata)
 		return metadata.(*models.KOSMetadata), nil
 	}
 
