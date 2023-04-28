@@ -14,6 +14,7 @@ type KOSMetadata struct {
 Represents a Key Of Salvation's metadata. A more simplified version compared to the `KOSMetadata` struct.
 */
 type KOSSimplifiedMetadata struct {
+	AnimationUrl   string  `bson:"animationUrl"`   // the animation URL of the Key Of Salvation
 	TokenID        int     `bson:"tokenID"`        // the token ID of the Key Of Salvation
 	HouseTrait     string  `bson:"houseTrait"`     // the house trait of the Key Of Salvation
 	TypeTrait      string  `bson:"typeTrait"`      // the type trait of the Key Of Salvation

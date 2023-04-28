@@ -117,6 +117,7 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 
 	simplifiedMetadata := &models.KOSSimplifiedMetadata{
 		TokenID:        tokenId,
+		AnimationUrl:   metadata.AnimationUrl,
 		HouseTrait:     metadata.Attributes[3].Value.(string),
 		TypeTrait:      metadata.Attributes[7].Value.(string),
 		LuckTrait:      metadata.Attributes[0].Value.(float64),
