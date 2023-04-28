@@ -56,6 +56,8 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 		return nil, err
 	}
 
+	log.Println("here 2!")
+
 	// cache metadata
 	metadataCache.Store(tokenId, &metadata)
 
@@ -80,6 +82,8 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println("here 2!")
 
 	simplifiedMetadata := &models.KOSSimplifiedMetadata{
 		TokenID:        tokenId,
