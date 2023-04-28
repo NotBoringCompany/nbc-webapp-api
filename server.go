@@ -4,6 +4,7 @@ import (
 	ApiKOS "nbc-backend-api-v2/api/nfts/kos"
 	"nbc-backend-api-v2/configs"
 	RoutesNFTs "nbc-backend-api-v2/routes/nfts"
+	UtilsKOS "nbc-backend-api-v2/utils/nfts/kos"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,6 +29,15 @@ func main() {
 	configs.ConnectMongo()
 
 	RoutesNFTs.KOSRoutes(app)
+
+	app.Get("/clearCache", func(c *fiber.Ctx) error {
+		UtilsKOS.ClearCache()
+		return c.SendString("Cache cleared!")
+	})
+
+	app.Get("/getCache", func(c *fiber.Ctx) error {
+		return c.JSON(UtilsKOS.GetCache())
+	})
 
 	// SCHEDULERS
 	ApiKOS.UpdateTotalYieldPointsScheduler().Start()
