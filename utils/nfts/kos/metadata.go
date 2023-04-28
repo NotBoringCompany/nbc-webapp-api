@@ -69,7 +69,7 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 	`tokenId` the token ID of the Key
 */
 
-func FetchSimplifiedMetadata(tokenId int) (models.KOSSimplifiedMetadata, error) {
+func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
 	// // Check if simplified metadata is in cache
 	// if metadata, ok := metadataCache.Load(tokenId); ok {
 	// 	log.Println("Here!")
@@ -78,7 +78,7 @@ func FetchSimplifiedMetadata(tokenId int) (models.KOSSimplifiedMetadata, error) 
 
 	metadata, err := FetchMetadata(tokenId)
 	if err != nil {
-		return models.KOSSimplifiedMetadata{}, err
+		return nil, err
 	}
 
 	fmt.Println(metadata)
@@ -93,10 +93,12 @@ func FetchSimplifiedMetadata(tokenId int) (models.KOSSimplifiedMetadata, error) 
 		LuckBoostTrait: 1 + (metadata.Attributes[1].Value.(float64) / 100),
 	}
 
+	fmt.Println("simplified metadata", simplifiedMetadata)
+
 	// // Cache simplified metadata
 	// metadataCache.Store(tokenId, simplifiedMetadata)
 
-	return simplifiedMetadata, nil
+	return &simplifiedMetadata, nil
 }
 
 func FetchSimplifiedMetadataConcurrent(tokenIds []int) ([]*models.KOSSimplifiedMetadata, error) {
