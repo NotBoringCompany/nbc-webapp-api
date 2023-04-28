@@ -17,15 +17,6 @@ var (
 	metadataCache sync.Map
 )
 
-func ClearCache() error {
-	metadataCache = sync.Map{}
-	return nil
-}
-
-func GetCache() sync.Map {
-	return metadataCache
-}
-
 /*
 `FetchMetadata` fetches a Key Of Salvation's metadata from Pinata (IPFS) and returns it as a `KOSMetadata` struct instance.
 
