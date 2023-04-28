@@ -23,9 +23,9 @@ var (
 	`tokenId` the token ID of the Key
 */
 func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
+	metadataCache = sync.Map{}
 	// check if metadata is in cache
 	if metadata, ok := metadataCache.Load(tokenId); ok {
-		metadataCache = sync.Map{}
 		return metadata.(*models.KOSMetadata), nil
 	}
 
@@ -68,9 +68,9 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 */
 
 func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
+	metadataCache = sync.Map{}
 	// Check if simplified metadata is in cache
 	if metadata, ok := metadataCache.Load(tokenId); ok {
-		metadataCache = sync.Map{}
 		return metadata.(*models.KOSSimplifiedMetadata), nil
 	}
 
