@@ -78,6 +78,33 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	app.Get("/kos/fetch-simplified-metadata/:tokenId", func(c *fiber.Ctx) error {
+		tokenId := c.Params("tokenId")
+		tokenIdInt, err := strconv.Atoi(tokenId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given tokenId to int.",
+				Data:    nil,
+			})
+		}
+
+		res, err := ApiKOS.FetchSimplifiedMetadata(tokenIdInt)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully fetch simplified metadata for given tokenId: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully fetched simplified metadata for given tokenId.",
+			Data:    &fiber.Map{"simplifiedMetadata": res},
+		})
+	})
+
 	// CalculateStakerTotalSubpoolPoints route
 	app.Get("/kos/staker-total-subpool-points/:wallet/:stakingPoolId", func(c *fiber.Ctx) error {
 		wallet := c.Params("wallet")

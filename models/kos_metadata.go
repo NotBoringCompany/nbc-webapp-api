@@ -6,7 +6,7 @@ Represents the full metadata for a Key Of Salvation.
 type KOSMetadata struct {
 	Name         string      `json:"name"`
 	Image        string      `json:"image"`
-	AnimationUrl string      `json:"animation_url"`
+	AnimationUrl string      `json:"animationUrl"`
 	Attributes   []Attribute `json:"attributes,omitempty"`
 }
 
@@ -14,12 +14,12 @@ type KOSMetadata struct {
 Represents a Key Of Salvation's metadata. A more simplified version compared to the `KOSMetadata` struct.
 */
 type KOSSimplifiedMetadata struct {
-	TokenID        int     `bson:"tokenID"`        // the token ID of the Key Of Salvation
-	AnimationUrl   string  `bson:"animationUrl"`   // the animation URL of the Key Of Salvation
-	HouseTrait     string  `bson:"houseTrait"`     // the house trait of the Key Of Salvation
-	TypeTrait      string  `bson:"typeTrait"`      // the type trait of the Key Of Salvation
-	LuckTrait      float64 `bson:"luckTrait"`      // the luck trait of the Key Of Salvation
-	LuckBoostTrait float64 `bson:"luckBoostTrait"` // the luck boost trait of the Key Of Salvation
+	TokenID        int     `json:"tokenID"`        // the token ID of the Key Of Salvation
+	AnimationUrl   string  `json:"animationUrl"`   // the animation URL of the Key Of Salvation
+	HouseTrait     string  `json:"houseTrait"`     // the house trait of the Key Of Salvation
+	TypeTrait      string  `json:"typeTrait"`      // the type trait of the Key Of Salvation
+	LuckTrait      float64 `json:"luckTrait"`      // the luck trait of the Key Of Salvation
+	LuckBoostTrait float64 `json:"luckBoostTrait"` // the luck boost trait of the Key Of Salvation
 }
 
 /*
