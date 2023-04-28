@@ -81,7 +81,7 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 		return nil, err
 	}
 
-	fmt.Println(metadata.AnimationUrl)
+	fmt.Println(metadata)
 
 	simplifiedMetadata := &models.KOSSimplifiedMetadata{
 		TokenID:        tokenId,
