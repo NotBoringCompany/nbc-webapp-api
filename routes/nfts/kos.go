@@ -310,59 +310,6 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	// app.Get("/kos/calculate-subpool-points", func(c *fiber.Ctx) error {
-	// 	// get the keyIds param from the request query params
-	// 	keyIdsParam := c.Query("keyIds")
-
-	// 	// convert the keyIds param to an array of ints
-	// 	keyIdsStr := strings.Split(keyIdsParam, ",")
-	// 	keyIds := make([]int, len(keyIdsStr))
-	// 	for i, id := range keyIdsStr {
-	// 		idInt, err := strconv.Atoi(id)
-	// 		if err != nil {
-	// 			return c.JSON(&responses.Response{
-	// 				Status:  fiber.StatusBadRequest,
-	// 				Message: fmt.Sprintf("unable to successfully convert given keyId to int: %v", err),
-	// 				Data:    nil,
-	// 			})
-	// 		}
-
-	// 		keyIds[i] = idInt
-	// 	}
-
-	// 	// get the keychainId and superiorKeychainId params from the request query params
-	// 	keychainIdParam := c.Query("keychainId")
-	// 	superiorKeychainIdParam := c.Query("superiorKeychainId")
-
-	// 	// convert the keychainId and superiorKeychainId params to ints
-	// 	keychainId, err := strconv.Atoi(keychainIdParam)
-	// 	if err != nil {
-	// 		return c.JSON(&responses.Response{
-	// 			Status:  fiber.StatusBadRequest,
-	// 			Message: fmt.Sprintf("unable to successfully convert given keychainId to int: %v", err),
-	// 			Data:    nil,
-	// 		})
-	// 	}
-
-	// 	superiorKeychainId, err := strconv.Atoi(superiorKeychainIdParam)
-	// 	if err != nil {
-	// 		return c.JSON(&responses.Response{
-	// 			Status:  fiber.StatusBadRequest,
-	// 			Message: fmt.Sprintf("unable to successfully convert given superiorKeychainId to int: %v", err),
-	// 			Data:    nil,
-	// 		})
-	// 	}
-
-	// 	// call the CalculateSubpoolPoints function
-	// 	points := ApiKOS.CalculateSubpoolPoints(keyIds, keychainId, superiorKeychainId)
-
-	// 	return c.JSON(&responses.Response{
-	// 		Status:  fiber.StatusOK,
-	// 		Message: "successfully calculated subpool points.",
-	// 		Data:    &fiber.Map{"points": points},
-	// 	})
-	// })
-
 	app.Get("/kos/calculate-subpool-token-share/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
 		// get the stakingPoolId and subpoolId params from the request query params
 		stakingPoolIdParam := c.Params("stakingPoolId")
