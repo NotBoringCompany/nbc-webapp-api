@@ -155,101 +155,6 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 	}, nil
 }
 
-// func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInventory, error) {
-// 	// first, get the owned key, keychain and superior keychain IDs
-
-// 	ownedKeyIds, err := UtilsKOS.OwnerIDs(wallet)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	ownedKeychainIds, err := UtilsKeychain.OwnerIDs(wallet)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	ownedSuperiorKeychainIds, err := UtilsSuperiorKeychain.OwnerIDs(wallet)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// then, get the metadata for the owned key ID
-// 	var keyMetadatas []*models.KOSSimplifiedMetadata
-// 	for _, id := range ownedKeyIds {
-// 		metadata := FetchSimplifiedMetadata(int(id.Int64()))
-// 		keyMetadatas = append(keyMetadatas, metadata)
-// 	}
-
-// 	var keyData []*models.KeyData
-// 	var keychainData []*models.KeychainData
-// 	var superiorKeychainData []*models.KeychainData
-
-// 	// IF STAKINGPOOLID ISN'T ADDED (IS -1 OR 0), THEN RETURN THE OWNED KEY, KEYCHAIN AND SUPERIOR KEYCHAIN IDS
-// 	if stakingPoolId == -1 || stakingPoolId == 0 {
-// 		for _, id := range ownedKeyIds {
-// 			keyData = append(keyData, &models.KeyData{
-// 				KeyMetadata: FetchSimplifiedMetadata(int(id.Int64())),
-// 				Stakeable:   true,
-// 			})
-// 		}
-
-// 		for _, id := range ownedKeychainIds {
-// 			keychainData = append(keychainData, &models.KeychainData{
-// 				KeychainID: int(id.Int64()),
-// 				Stakeable:  true,
-// 			})
-// 		}
-
-// 		for _, id := range ownedSuperiorKeychainIds {
-// 			superiorKeychainData = append(superiorKeychainData, &models.KeychainData{
-// 				KeychainID: int(id.Int64()),
-// 				Stakeable:  true,
-// 			})
-// 		}
-// 		// if stakingPoolId is not -1 or 0, then it is a valid staking pool ID
-// 	} else {
-// 		// then, check if any of the keys, keychains and/or superior keychains are staked in the specified staking pool
-// 		for _, key := range keyMetadatas {
-// 			isStaked, err := UtilsKOS.CheckIfKeyStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, key)
-// 			if err != nil {
-// 				return nil, err
-// 			}
-
-// 			keyData = append(keyData, &models.KeyData{
-// 				KeyMetadata: key,
-// 				Stakeable:   !isStaked, // if the key is staked, it is not stakeable and vice versa.
-// 			})
-// 		}
-// 		for _, keychainId := range ownedKeychainIds {
-// 			isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, int(keychainId.Int64()))
-// 			if err != nil {
-// 				return nil, err
-// 			}
-
-// 			keychainData = append(keychainData, &models.KeychainData{
-// 				KeychainID: int(keychainId.Int64()),
-// 				Stakeable:  !isStaked, // if the keychain is staked, it is not stakeable and vice versa.
-// 			})
-// 		}
-// 		for _, superiorKeychainId := range ownedSuperiorKeychainIds {
-// 			isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, int(superiorKeychainId.Int64()))
-// 			if err != nil {
-// 				return nil, err
-// 			}
-
-// 			superiorKeychainData = append(superiorKeychainData, &models.KeychainData{
-// 				KeychainID: int(superiorKeychainId.Int64()),
-// 				Stakeable:  !isStaked, // if the superior keychain is staked, it is not stakeable and vice versa.
-// 			})
-// 		}
-// 	}
-
-// 	return &models.KOSStakerInventory{
-// 		Wallet:               wallet,
-// 		KeyData:              keyData,
-// 		KeychainData:         keychainData,
-// 		SuperiorKeychainData: superiorKeychainData,
-// 	}, nil
-// }
-
 /*
 Returns all active and closed staking pools, each with their respective staking pool data
 */
@@ -276,6 +181,44 @@ func FetchStakingPoolData() (*models.AllStakingPools, error) {
 		StakeablePools: stakeablePools,
 		OngoingPools:   ongoingPools,
 		ClosedPools:    closedPools,
+	}, nil
+}
+
+/*
+Fetches the subpool data but with an API request format for StakingSubpool data.
+*/
+func FetchSubpoolData(stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, error) {
+	// fetch the subpool data
+	subpool, err := UtilsKOS.GetSubpoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId)
+	if err != nil {
+		return nil, err
+	}
+
+	var stakedKeychainID *int
+	var stakedSuperiorKeychainID *int
+	if subpool.StakedKeychainID != -1 {
+		stakedKeychainID = &subpool.StakedKeychainID
+	} else {
+		stakedKeychainID = nil
+	}
+	if subpool.StakedSuperiorKeychainID != -1 {
+		stakedSuperiorKeychainID = &subpool.StakedSuperiorKeychainID
+	} else {
+		stakedSuperiorKeychainID = nil
+	}
+
+	// return the subpool data in the format we want
+	return &models.StakingSubpoolAlt{
+		SubpoolID:                subpool.SubpoolID,
+		Staker:                   subpool.Staker,
+		EnterTime:                subpool.EnterTime.Unix(),
+		ExitTime:                 subpool.ExitTime.Unix(),
+		StakedKeys:               subpool.StakedKeys,
+		StakedKeychainID:         stakedKeychainID,
+		StakedSuperiorKeychainID: stakedSuperiorKeychainID,
+		SubpoolPoints:            subpool.SubpoolPoints,
+		RewardClaimed:            subpool.RewardClaimed,
+		Banned:                   subpool.Banned,
 	}, nil
 }
 

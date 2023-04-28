@@ -540,6 +540,35 @@ func GetStakingPoolData(collection *mongo.Collection, stakingPoolId int) (*model
 }
 
 /*
+Gets the subpool data for a subpool with `subpoolId` from a staking pool with `stakingPoolId`.
+*/
+func GetSubpoolData(collection *mongo.Collection, stakingPoolId, subpoolId int) (*models.StakingSubpool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("collection must be RHStakingPool")
+	}
+
+	var stakingPool models.StakingPool
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sp := range stakingPool.ActiveSubpools {
+		if sp.SubpoolID == subpoolId {
+			return sp, nil
+		}
+	}
+	for _, sp := range stakingPool.ClosedSubpools {
+		if sp.SubpoolID == subpoolId {
+			return sp, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no subpool with ID %d exists in staking pool %d", subpoolId, stakingPoolId)
+}
+
+/*
 Gets the start time of a staking pool.
 */
 func GetStartTimeOfStakingPool(collection *mongo.Collection, stakingPoolId int) (time.Time, error) {
