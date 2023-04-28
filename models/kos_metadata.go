@@ -6,7 +6,7 @@ Represents the full metadata for a Key Of Salvation.
 type KOSMetadata struct {
 	Name         string      `json:"name"`
 	Image        string      `json:"image"`
-	AnimationUrl string      `json:"animationUrl"`
+	AnimationUrl string      `json:"animation_url"`
 	Attributes   []Attribute `json:"attributes,omitempty"`
 }
 

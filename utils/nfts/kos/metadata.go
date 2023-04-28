@@ -23,11 +23,10 @@ var (
 	`tokenId` the token ID of the Key
 */
 func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
-	// // check if metadata is in cache
-	// if metadata, ok := metadataCache.Load(tokenId); ok {
-	// 	log.Println("Here!")
-	// 	return metadata.(*models.KOSMetadata), nil
-	// }
+	// check if metadata is in cache
+	if metadata, ok := metadataCache.Load(tokenId); ok {
+		return metadata.(*models.KOSMetadata), nil
+	}
 
 	url := os.Getenv("KOS_URI") + fmt.Sprint(tokenId) + ".json"
 	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
@@ -55,10 +54,8 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 		return nil, err
 	}
 
-	log.Println("here 2!")
-
-	// // cache metadata
-	// metadataCache.Store(tokenId, &metadata)
+	// cache metadata
+	metadataCache.Store(tokenId, &metadata)
 
 	return &metadata, nil
 }
@@ -70,11 +67,10 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 */
 
 func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
-	// // Check if simplified metadata is in cache
-	// if metadata, ok := metadataCache.Load(tokenId); ok {
-	// 	log.Println("Here!")
-	// 	return metadata.(*models.KOSSimplifiedMetadata), nil
-	// }
+	// Check if simplified metadata is in cache
+	if metadata, ok := metadataCache.Load(tokenId); ok {
+		return metadata.(*models.KOSSimplifiedMetadata), nil
+	}
 
 	metadata, err := FetchMetadata(tokenId)
 	if err != nil {
@@ -84,7 +80,7 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 	fmt.Println(metadata)
 	fmt.Println("animation url", metadata.AnimationUrl)
 
-	simplifiedMetadata := models.KOSSimplifiedMetadata{
+	simplifiedMetadata := &models.KOSSimplifiedMetadata{
 		TokenID:        tokenId,
 		AnimationUrl:   metadata.AnimationUrl,
 		HouseTrait:     metadata.Attributes[3].Value.(string),
@@ -95,10 +91,10 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 
 	fmt.Println("simplified metadata", simplifiedMetadata)
 
-	// // Cache simplified metadata
-	// metadataCache.Store(tokenId, simplifiedMetadata)
+	// Cache simplified metadata
+	metadataCache.Store(tokenId, simplifiedMetadata)
 
-	return &simplifiedMetadata, nil
+	return simplifiedMetadata, nil
 }
 
 func FetchSimplifiedMetadataConcurrent(tokenIds []int) ([]*models.KOSSimplifiedMetadata, error) {
