@@ -23,12 +23,11 @@ var (
 	`tokenId` the token ID of the Key
 */
 func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
-	metadataCache = sync.Map{}
-	// check if metadata is in cache
-	if metadata, ok := metadataCache.Load(tokenId); ok {
-		log.Println("Here!")
-		return metadata.(*models.KOSMetadata), nil
-	}
+	// // check if metadata is in cache
+	// if metadata, ok := metadataCache.Load(tokenId); ok {
+	// 	log.Println("Here!")
+	// 	return metadata.(*models.KOSMetadata), nil
+	// }
 
 	url := os.Getenv("KOS_URI") + fmt.Sprint(tokenId) + ".json"
 	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
@@ -58,8 +57,8 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 
 	log.Println("here 2!")
 
-	// cache metadata
-	metadataCache.Store(tokenId, &metadata)
+	// // cache metadata
+	// metadataCache.Store(tokenId, &metadata)
 
 	return &metadata, nil
 }
@@ -71,12 +70,11 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 */
 
 func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
-	metadataCache = sync.Map{}
-	// Check if simplified metadata is in cache
-	if metadata, ok := metadataCache.Load(tokenId); ok {
-		log.Println("Here!")
-		return metadata.(*models.KOSSimplifiedMetadata), nil
-	}
+	// // Check if simplified metadata is in cache
+	// if metadata, ok := metadataCache.Load(tokenId); ok {
+	// 	log.Println("Here!")
+	// 	return metadata.(*models.KOSSimplifiedMetadata), nil
+	// }
 
 	metadata, err := FetchMetadata(tokenId)
 	if err != nil {
@@ -94,8 +92,8 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 		LuckBoostTrait: 1 + (metadata.Attributes[1].Value.(float64) / 100),
 	}
 
-	// Cache simplified metadata
-	metadataCache.Store(tokenId, simplifiedMetadata)
+	// // Cache simplified metadata
+	// metadataCache.Store(tokenId, simplifiedMetadata)
 
 	return simplifiedMetadata, nil
 }
