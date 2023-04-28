@@ -67,10 +67,6 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 */
 
 func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
-	// Check if simplified metadata is in cache
-	if metadata, ok := metadataCache.Load(tokenId); ok {
-		return metadata.(*models.KOSSimplifiedMetadata), nil
-	}
 
 	metadata, err := FetchMetadata(tokenId)
 	if err != nil {
@@ -90,9 +86,6 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 	}
 
 	fmt.Println("simplified metadata", simplifiedMetadata)
-
-	// Cache simplified metadata
-	metadataCache.Store(tokenId, simplifiedMetadata)
 
 	return simplifiedMetadata, nil
 }
