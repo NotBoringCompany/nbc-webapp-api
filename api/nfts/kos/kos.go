@@ -59,6 +59,7 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 
 	// collect metadata results
 	var keyMetadata []*models.KOSSimplifiedMetadata
+	// both keychain and superior keychain metadata doesn't technically use the `KOSSimplifiedMetadata` struct, but for the sake of simplicity, we'll use it here
 	var keychainMetadata []*models.KOSSimplifiedMetadata
 	var superiorKeychainMetadata []*models.KOSSimplifiedMetadata
 
@@ -186,6 +187,16 @@ func FetchStakingPoolData() (*models.AllStakingPools, error) {
 		OngoingPools:   ongoingPools,
 		ClosedPools:    closedPools,
 	}, nil
+}
+
+func FetchTokenPreAddSubpoolData(
+	stakingPoolId,
+	subpoolId int,
+	keyIds []int,
+	keychainId,
+	superiorKeychainId int,
+) (*models.DetailedTokenSubpoolPreAddCalc, error) {
+	return UtilsKOS.GetTokenPreAddSubpoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId, keyIds, keychainId, superiorKeychainId)
 }
 
 /*

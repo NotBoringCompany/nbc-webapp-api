@@ -41,6 +41,78 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	// FetchTokenPreAddSubpoolData route
+	app.Get("/kos/fetch-token-pre-add-subpool-data/", func(c *fiber.Ctx) error {
+		// get the staking pool id, subpool id, key ids, keychain id and superior keychain id from the query params
+		stakingPoolId := c.Query("stakingPoolId")
+		subpoolId := c.Query("subpoolId")
+		keyIds := c.Query("keyIds")
+		keychainId := c.Query("keychainId")
+		superiorKeychainId := c.Query("superiorKeychainId")
+
+		keyIdsStr := strings.Split(keyIds, ",")
+		keyIdsInt := make([]int, len(keyIdsStr))
+		for i, keyId := range keyIdsStr {
+			keyIdInt, err := strconv.Atoi(keyId)
+			if err != nil {
+				return c.JSON(&responses.Response{
+					Status:  fiber.StatusBadRequest,
+					Message: "unable to successfully convert given keyId to int.",
+					Data:    nil,
+				})
+			}
+			keyIdsInt[i] = keyIdInt
+		}
+
+		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given stakingPoolId to int.",
+				Data:    nil,
+			})
+		}
+		subpoolIdInt, err := strconv.Atoi(subpoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given subpoolId to int.",
+				Data:    nil,
+			})
+		}
+		keychainIdInt, err := strconv.Atoi(keychainId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given keychainId to int.",
+				Data:    nil,
+			})
+		}
+		superiorKeychainIdInt, err := strconv.Atoi(superiorKeychainId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given superiorKeychainId to int.",
+				Data:    nil,
+			})
+		}
+
+		res, err := ApiKOS.FetchTokenPreAddSubpoolData(stakingPoolIdInt, subpoolIdInt, keyIdsInt, keychainIdInt, superiorKeychainIdInt)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully fetch token pre add subpool data: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully fetched token pre add subpool data.",
+			Data:    &fiber.Map{"tokenPreAddSubpoolData": res},
+		})
+	})
+
 	// FetchSubpoolData route
 	app.Get("/kos/fetch-subpool-data/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")
@@ -286,7 +358,7 @@ func KOSRoutes(app *fiber.App) {
 	// CalculateSubpoolPoints route
 	app.Get("/kos/calculate-subpool-points", func(c *fiber.Ctx) error {
 		// get the keyIds param from the request query params
-		keyIdsParam := c.Query("keyIds")
+		keyIdsParam := ("keyIds")
 
 		// convert the keyIds param to an array of ints
 		keyIdsStr := strings.Split(keyIdsParam, ",")

@@ -112,10 +112,19 @@ type KeyCombo struct {
 Represents a detailed way of calculating the subpool points, breaking down how the points are calculated.
 */
 type DetailedSubpoolPoints struct {
-	LuckAndLuckBoostSum float64 `bson:"luckAndLuckBoostSum"` // the sum of the luck and luck boost of all keys
-	KeyCombo            float64 `bson:"keyCombo"`            // the key combo multiplier
-	KeychainCombo       float64 `bson:"keychainCombo"`       // the keychain combo multiplier
-	Total               float64 `bson:"total"`               // the total subpool points (calculated by the formula)
+	LuckAndLuckBoostSum float64 `json:"luckAndLuckBoostSum"` // the sum of the luck and luck boost of all keys
+	KeyCombo            float64 `json:"keyCombo"`            // the key combo multiplier
+	KeychainCombo       float64 `json:"keychainCombo"`       // the keychain combo multiplier
+	Total               float64 `json:"total"`               // the total subpool points (calculated by the formula)
+}
+
+/*
+Represents all details required before a staker adds a subpool to a specific staking pool with tokens as a reward.
+*/
+type DetailedTokenSubpoolPreAddCalc struct {
+	TokenShare      float64 `json:"tokenShare"`  // the token share of the staker (if they were to add the subpool)
+	PoolTotalReward float64 `json:"totalReward"` // the total reward of the staking pool
+	*DetailedSubpoolPoints
 }
 
 /*

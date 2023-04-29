@@ -14,6 +14,97 @@ import (
 )
 
 /*
+Gets the reward details for the staker before adding a subpool to show what they will earn.
+Only for token based reward pools.
+*/
+func GetTokenPreAddSubpoolData(
+	collection *mongo.Collection,
+	stakingPoolId,
+	subpoolId int,
+	keyIds []int,
+	keychainId,
+	superiorKeychainId int,
+) (*models.DetailedTokenSubpoolPreAddCalc, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("collection must be RHStakingPool")
+	}
+	// first, we fetch the key data of each key.
+	keyMetadata, err := FetchSimplifiedMetadataConcurrent(keyIds)
+	if err != nil {
+		return nil, err
+	}
+
+	// create channels for each variable
+	luckSumCh := make(chan float64, len(keyMetadata))
+	keyComboCh := make(chan float64, len(keyMetadata))
+	keychainComboCh := make(chan float64, len(keyMetadata))
+	subpoolPointsCh := make(chan float64, len(keyMetadata))
+	stakingPoolDataCh := make(chan *models.StakingPool, len(keyMetadata))
+	var newPoints float64
+
+	for _, metadata := range keyMetadata {
+		go func(md *models.KOSSimplifiedMetadata) {
+			luckSumCh <- (md.LuckTrait * md.LuckBoostTrait)
+		}(metadata)
+	}
+
+	go func() {
+		keyCombo := CalculateKeyCombo(keyMetadata)
+		keyComboCh <- keyCombo
+	}()
+
+	go func() {
+		keychainCombo := CalculateKeychainCombo(keychainId, superiorKeychainId)
+		keychainComboCh <- keychainCombo
+	}()
+
+	go func() {
+		subpoolPoints := CalculateSubpoolPoints(keyMetadata, keychainId, superiorKeychainId)
+		subpoolPointsCh <- subpoolPoints
+		// get the accumulated subpool points across the staking pool
+	}()
+
+	go func() {
+		subpoolData, err := GetStakingPoolData(collection, stakingPoolId)
+		if err != nil {
+			log.Println(err)
+		}
+		stakingPoolDataCh <- subpoolData
+	}()
+
+	// collect results
+	luckSum := <-luckSumCh
+	keyCombo := <-keyComboCh
+	keychainCombo := <-keychainComboCh
+	subpoolPoints := <-subpoolPointsCh
+	stakingPoolData := <-stakingPoolDataCh
+
+	// calculate the new points
+	accSubpoolPoints, err := GetAccSubpoolPoints(collection, stakingPoolId, subpoolId)
+	if err != nil {
+		return nil, err
+	}
+
+	// add the `subpoolPoints` and `accSubpoolPoints`
+	newPoints = subpoolPoints + accSubpoolPoints
+
+	// calculate the token share manually
+	reward := stakingPoolData.Reward.Amount
+	tokenShare := math.Round(subpoolPoints/newPoints*reward*100) / 100
+
+	return &models.DetailedTokenSubpoolPreAddCalc{
+		TokenShare:      tokenShare,
+		PoolTotalReward: reward,
+		DetailedSubpoolPoints: &models.DetailedSubpoolPoints{
+			LuckAndLuckBoostSum: luckSum,
+			KeyCombo:            keyCombo,
+			KeychainCombo:       keychainCombo,
+			Total:               subpoolPoints,
+		},
+	}, nil
+}
+
+/*
 ONLY FOR TOKEN REWARDS: calculate the reward share for a specific subpool of ID `subpoolId` for a staking pool with ID `stakingPoolId`.
 */
 func CalcSubpoolTokenShare(collection *mongo.Collection, stakingPoolId, subpoolId int) (float64, error) {
