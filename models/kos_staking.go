@@ -122,28 +122,7 @@ type DetailedSubpoolPoints struct {
 A staker's inventory. Used for API calls to display all the key, keychain and superior keychain IDs of a staker.
 */
 type KOSStakerInventory struct {
-	Wallet               string          `json:"wallet"`
-	KeyData              []*KeyData      `json:"keyData"`
-	KeychainData         []*KeychainData `json:"keychainData"`
-	SuperiorKeychainData []*KeychainData `json:"superiorKeychainData"`
-}
-
-/*
-Additional data for a Key Of Salvation. Checks (on top of having the metadata) if the key is stakeable.
-*/
-type KeyData struct {
-	Name        string                 `json:"name"` // the name of the key
-	ImageUrl    string                 `json:"imageUrl"`
-	KeyMetadata *KOSSimplifiedMetadata `json:"keyMetadata"`
-	Stakeable   bool                   `json:"stakeable"`
-}
-
-/*
-Used for both keychain and superior keychain. Checks if the keychain(s) is/are stakeable.
-*/
-type KeychainData struct {
-	Name       string `json:"name"` // the name of the keychain
-	ImageUrl   string `json:"imageUrl"`
-	KeychainID int    `json:"keychainID"`
-	Stakeable  bool   `json:"stakeable"`
+	KeyData              []*NFTData `json:"keyData"`
+	KeychainData         []*NFTData `json:"keychainData"`
+	SuperiorKeychainData []*NFTData `json:"superiorKeychainData"`
 }

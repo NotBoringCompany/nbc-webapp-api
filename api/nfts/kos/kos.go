@@ -85,9 +85,9 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 
 	// check if any of the keys, keychains and/or superior keychains are staked in the specified staking pool
 	// Parallelize staking checks
-	keyDataCh := make(chan *models.KeyData, len(keyMetadata))
-	keychainDataCh := make(chan *models.KeychainData, len(keychainMetadata))
-	superiorKeychainDataCh := make(chan *models.KeychainData, len(superiorKeychainMetadata))
+	keyDataCh := make(chan *models.NFTData, len(keyMetadata))
+	keychainDataCh := make(chan *models.NFTData, len(keychainMetadata))
+	superiorKeychainDataCh := make(chan *models.NFTData, len(superiorKeychainMetadata))
 
 	for _, metadata := range keyMetadata {
 		go func(md *models.KOSSimplifiedMetadata) {
@@ -95,11 +95,11 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 			if err != nil {
 				log.Printf("Error checking if key is staked for token ID %d: %v\n", md.TokenID, err)
 			} else {
-				keyDataCh <- &models.KeyData{
-					Name:        fmt.Sprintf("Key Of Salvation #%d", md.TokenID),
-					ImageUrl:    md.AnimationUrl,
-					KeyMetadata: md,
-					Stakeable:   !isStaked,
+				keyDataCh <- &models.NFTData{
+					Name:      fmt.Sprintf("Key Of Salvation #%d", md.TokenID),
+					ImageUrl:  md.AnimationUrl,
+					Metadata:  md,
+					Stakeable: !isStaked,
 				}
 			}
 		}(metadata)
@@ -111,11 +111,10 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 			if err != nil {
 				log.Printf("Error checking if keychain is staked for token ID %d: %v\n", md.TokenID, err)
 			} else {
-				keychainDataCh <- &models.KeychainData{
-					Name:       fmt.Sprintf("Keychain #%d", md.TokenID),
-					ImageUrl:   md.AnimationUrl,
-					KeychainID: md.TokenID,
-					Stakeable:  !isStaked,
+				keychainDataCh <- &models.NFTData{
+					Name:      fmt.Sprintf("Keychain #%d", md.TokenID),
+					ImageUrl:  md.AnimationUrl,
+					Stakeable: !isStaked,
 				}
 			}
 		}(metadata)
@@ -127,20 +126,19 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 			if err != nil {
 				log.Printf("Error checking if superior keychain is staked for token ID %d: %v\n", md.TokenID, err)
 			} else {
-				superiorKeychainDataCh <- &models.KeychainData{
-					Name:       fmt.Sprintf("Superior Keychain #%d", md.TokenID),
-					ImageUrl:   md.AnimationUrl,
-					KeychainID: md.TokenID,
-					Stakeable:  !isStaked,
+				superiorKeychainDataCh <- &models.NFTData{
+					Name:      fmt.Sprintf("Superior Keychain #%d", md.TokenID),
+					ImageUrl:  md.AnimationUrl,
+					Stakeable: !isStaked,
 				}
 			}
 		}(metadata)
 	}
 
 	// Collect staking check results
-	keyData := make([]*models.KeyData, 0, len(keyMetadata))
-	keychainData := make([]*models.KeychainData, 0, len(keychainMetadata))
-	superiorKeychainData := make([]*models.KeychainData, 0, len(superiorKeychainMetadata))
+	keyData := make([]*models.NFTData, 0, len(keyMetadata))
+	keychainData := make([]*models.NFTData, 0, len(keychainMetadata))
+	superiorKeychainData := make([]*models.NFTData, 0, len(superiorKeychainMetadata))
 
 	for i := 0; i < len(keyMetadata); i++ {
 		keyData = append(keyData, <-keyDataCh)
@@ -155,7 +153,6 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 	}
 
 	return &models.KOSStakerInventory{
-		Wallet:               wallet,
 		KeyData:              keyData,
 		KeychainData:         keychainData,
 		SuperiorKeychainData: superiorKeychainData,

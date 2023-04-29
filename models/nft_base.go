@@ -21,10 +21,11 @@ type OwnershipData struct {
 }
 
 /*
-A struct that represents the data of an NFT.
+A base struct that represents the data of any NFT.
 */
 type NFTData struct {
-	Name     string      `json:"name"`
-	ImageUrl string      `json:"imageUrl"`
-	Metadata interface{} `json:"metadata"`
+	Name      string      `json:"name"`
+	ImageUrl  string      `json:"imageUrl"`
+	Metadata  interface{} `json:"metadata"`
+	Stakeable bool        `json:"stakeable"`
 }
