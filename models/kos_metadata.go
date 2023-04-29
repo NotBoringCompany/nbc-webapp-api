@@ -1,7 +1,7 @@
 package models
 
 /*
-Represents the full metadata for a Key Of Salvation.
+Represents the full metadata for a Key Of Salvation (taken from Pinata).
 */
 type KOSMetadata struct {
 	Name         string      `json:"name"`
