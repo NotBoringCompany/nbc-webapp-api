@@ -1,6 +1,7 @@
 package api_kos
 
 import (
+	"fmt"
 	"log"
 	"math/big"
 	"nbc-backend-api-v2/configs"
@@ -95,6 +96,8 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 				log.Printf("Error checking if key is staked for token ID %d: %v\n", md.TokenID, err)
 			} else {
 				keyDataCh <- &models.KeyData{
+					Name:        fmt.Sprintf("Key %d", md.TokenID),
+					ImageUrl:    md.AnimationUrl,
 					KeyMetadata: md,
 					Stakeable:   !isStaked,
 				}
@@ -109,6 +112,8 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 				log.Printf("Error checking if keychain is staked for token ID %d: %v\n", md.TokenID, err)
 			} else {
 				keychainDataCh <- &models.KeychainData{
+					Name:       fmt.Sprintf("Keychain %d", md.TokenID),
+					ImageUrl:   md.AnimationUrl,
 					KeychainID: md.TokenID,
 					Stakeable:  !isStaked,
 				}
@@ -123,6 +128,8 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 				log.Printf("Error checking if superior keychain is staked for token ID %d: %v\n", md.TokenID, err)
 			} else {
 				superiorKeychainDataCh <- &models.KeychainData{
+					Name:       fmt.Sprintf("Superior Keychain %d", md.TokenID),
+					ImageUrl:   md.AnimationUrl,
 					KeychainID: md.TokenID,
 					Stakeable:  !isStaked,
 				}

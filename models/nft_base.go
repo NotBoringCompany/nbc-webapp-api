@@ -19,3 +19,12 @@ type OwnershipData struct {
 	Addr     common.Address `json:"addr"`
 	TokenIDs []*big.Int     `json:"tokenIDs"`
 }
+
+/*
+A struct that represents the data of an NFT.
+*/
+type NFTData struct {
+	Name     string      `json:"name"`
+	ImageUrl string      `json:"imageUrl"`
+	Metadata interface{} `json:"metadata"`
+}
