@@ -67,14 +67,10 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 */
 
 func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error) {
-
 	metadata, err := FetchMetadata(tokenId)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(metadata)
-	fmt.Println("animation url", metadata.AnimationUrl)
 
 	simplifiedMetadata := &models.KOSSimplifiedMetadata{
 		TokenID:        tokenId,
@@ -84,8 +80,6 @@ func FetchSimplifiedMetadata(tokenId int) (*models.KOSSimplifiedMetadata, error)
 		LuckTrait:      metadata.Attributes[0].Value.(float64),
 		LuckBoostTrait: 1 + (metadata.Attributes[1].Value.(float64) / 100),
 	}
-
-	fmt.Println("simplified metadata", simplifiedMetadata)
 
 	return simplifiedMetadata, nil
 }
