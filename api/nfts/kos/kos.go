@@ -96,7 +96,7 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 				log.Printf("Error checking if key is staked for token ID %d: %v\n", md.TokenID, err)
 			} else {
 				keyDataCh <- &models.KeyData{
-					Name:        fmt.Sprintf("Key %d", md.TokenID),
+					Name:        fmt.Sprintf("Key Of Salvation %d", md.TokenID),
 					ImageUrl:    md.AnimationUrl,
 					KeyMetadata: md,
 					Stakeable:   !isStaked,
