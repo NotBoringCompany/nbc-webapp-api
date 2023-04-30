@@ -26,6 +26,7 @@ A base struct that represents the data of any NFT.
 type NFTData struct {
 	Name      string      `json:"name"`
 	ImageUrl  string      `json:"imageUrl"`
+	TokenID   int         `json:"tokenID"` // the token id just in case it doesn't exist in Metadata
 	Metadata  interface{} `json:"metadata"`
 	Stakeable bool        `json:"stakeable"`
 }

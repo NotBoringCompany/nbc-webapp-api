@@ -99,6 +99,7 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 				keyDataCh <- &models.NFTData{
 					Name:      fmt.Sprintf("Key Of Salvation #%d", md.TokenID),
 					ImageUrl:  md.AnimationUrl,
+					TokenID:   md.TokenID,
 					Metadata:  md,
 					Stakeable: !isStaked,
 				}
@@ -115,6 +116,7 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 				keychainDataCh <- &models.NFTData{
 					Name:      fmt.Sprintf("Keychain #%d", md.TokenID),
 					ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/keychain.mp4",
+					TokenID:   md.TokenID,
 					Stakeable: !isStaked,
 				}
 			}
@@ -130,6 +132,7 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 				superiorKeychainDataCh <- &models.NFTData{
 					Name:      fmt.Sprintf("Superior Keychain #%d", md.TokenID),
 					ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/superiorKeychain.mp4",
+					TokenID:   md.TokenID,
 					Stakeable: !isStaked,
 				}
 			}
