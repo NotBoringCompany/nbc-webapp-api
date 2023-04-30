@@ -351,7 +351,7 @@ func DetailedSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) *mo
 		LuckAndLuckBoostSum: luckAndLuckBoostSum,
 		KeyCombo:            keyCombo,
 		KeychainCombo:       keychainCombo,
-		Total:               CalculateSubpoolPoints(keyIds, keychainId, superiorKeychainId),
+		ComboSum:            CalculateSubpoolPoints(keyIds, keychainId, superiorKeychainId),
 	}
 }
 

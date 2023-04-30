@@ -89,14 +89,14 @@ func GetTokenPreAddSubpoolData(
 	tokenShare := math.Round(subpoolPoints/newPoints*reward*100) / 100
 
 	return &models.DetailedTokenSubpoolPreAddCalc{
-		TokenShare:      tokenShare,
-		PoolTotalReward: reward,
+		TokenShare:         tokenShare,
+		PoolTotalReward:    reward,
+		NewTotalPoolPoints: newPoints,
 		DetailedSubpoolPoints: &models.DetailedSubpoolPoints{
 			LuckAndLuckBoostSum: luckSum,
 			KeyCombo:            keyCombo,
 			KeychainCombo:       keychainCombo,
 			ComboSum:            subpoolPoints,
-			NewTotalPoolPoints:  newPoints,
 		},
 	}, nil
 }

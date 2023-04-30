@@ -116,15 +116,15 @@ type DetailedSubpoolPoints struct {
 	KeyCombo            float64 `json:"keyCombo"`            // the key combo multiplier
 	KeychainCombo       float64 `json:"keychainCombo"`       // the keychain combo multiplier
 	ComboSum            float64 `json:"comboSum"`            // the total subpool points that the staker will earn (calculated by the formula)
-	NewTotalPoolPoints  float64 `json:"newTotalPoolPoints"`  // the new total pool points of the staker after adding the subpool
 }
 
 /*
 Represents all details required before a staker adds a subpool to a specific staking pool with tokens as a reward.
 */
 type DetailedTokenSubpoolPreAddCalc struct {
-	TokenShare      float64 `json:"tokenShare"`  // the token share of the staker (if they were to add the subpool)
-	PoolTotalReward float64 `json:"totalReward"` // the total reward of the staking pool
+	TokenShare         float64 `json:"tokenShare"`         // the token share of the staker (if they were to add the subpool)
+	PoolTotalReward    float64 `json:"totalReward"`        // the total reward of the staking pool
+	NewTotalPoolPoints float64 `json:"newTotalPoolPoints"` // the new total pool points of the staker after adding the subpool
 	*DetailedSubpoolPoints
 }
 
