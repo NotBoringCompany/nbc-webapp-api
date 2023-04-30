@@ -95,7 +95,8 @@ func GetTokenPreAddSubpoolData(
 			LuckAndLuckBoostSum: luckSum,
 			KeyCombo:            keyCombo,
 			KeychainCombo:       keychainCombo,
-			Total:               subpoolPoints,
+			ComboSum:            subpoolPoints,
+			NewTotalPoolPoints:  newPoints,
 		},
 	}, nil
 }

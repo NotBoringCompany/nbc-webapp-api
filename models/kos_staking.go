@@ -115,7 +115,8 @@ type DetailedSubpoolPoints struct {
 	LuckAndLuckBoostSum float64 `json:"luckAndLuckBoostSum"` // the sum of the luck and luck boost of all keys
 	KeyCombo            float64 `json:"keyCombo"`            // the key combo multiplier
 	KeychainCombo       float64 `json:"keychainCombo"`       // the keychain combo multiplier
-	Total               float64 `json:"total"`               // the total subpool points (calculated by the formula)
+	ComboSum            float64 `json:"comboSum"`            // the total subpool points that the staker will earn (calculated by the formula)
+	NewTotalPoolPoints  float64 `json:"newTotalPoolPoints"`  // the new total pool points of the staker after adding the subpool
 }
 
 /*
