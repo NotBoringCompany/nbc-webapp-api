@@ -197,10 +197,10 @@ func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainId, su
 	// call `CalculateKeychainCombo`
 	keychainCombo := CalculateKeychainCombo(keychainId, superiorKeychainId)
 
-	subpoolPoints := (BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo) * 100) / 100
+	subpoolPoints := BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo)
 
 	// call `BaseSubpoolPoints`
-	return subpoolPoints
+	return (subpoolPoints * 100) / 100
 }
 
 /*
