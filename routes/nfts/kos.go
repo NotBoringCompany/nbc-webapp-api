@@ -88,7 +88,7 @@ func KOSRoutes(app *fiber.App) {
 			})
 		}
 
-		res, err := ApiKOS.FetchTokenPreAddSubpoolData(stakingPoolIdInt, subpoolIdInt, keyIdsInt, keychainIdInt, superiorKeychainIdInt)
+		res, err := ApiKOS.FetchTokenPreAddSubpoolData(stakingPoolIdInt, keyIdsInt, keychainIdInt, superiorKeychainIdInt)
 		if err != nil {
 			return c.JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,

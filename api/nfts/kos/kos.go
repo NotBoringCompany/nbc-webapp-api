@@ -190,8 +190,7 @@ func FetchStakingPoolData() (*models.AllStakingPools, error) {
 }
 
 func FetchTokenPreAddSubpoolData(
-	stakingPoolId,
-	subpoolId int,
+	stakingPoolId int,
 	keyIds []int,
 	keychainId,
 	superiorKeychainId int,
