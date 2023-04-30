@@ -196,7 +196,7 @@ func FetchTokenPreAddSubpoolData(
 	keychainId,
 	superiorKeychainId int,
 ) (*models.DetailedTokenSubpoolPreAddCalc, error) {
-	return UtilsKOS.GetTokenPreAddSubpoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId, keyIds, keychainId, superiorKeychainId)
+	return UtilsKOS.GetTokenPreAddSubpoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, keyIds, keychainId, superiorKeychainId)
 }
 
 /*

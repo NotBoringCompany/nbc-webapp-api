@@ -19,8 +19,7 @@ Only for token based reward pools.
 */
 func GetTokenPreAddSubpoolData(
 	collection *mongo.Collection,
-	stakingPoolId,
-	subpoolId int,
+	stakingPoolId int,
 	keyIds []int,
 	keychainId,
 	superiorKeychainId int,
@@ -80,10 +79,7 @@ func GetTokenPreAddSubpoolData(
 	stakingPoolData := <-stakingPoolDataCh
 
 	// calculate the new points
-	accSubpoolPoints, err := GetAccSubpoolPoints(collection, stakingPoolId, subpoolId)
-	if err != nil {
-		return nil, err
-	}
+	accSubpoolPoints := stakingPoolData.TotalYieldPoints
 
 	// add the `subpoolPoints` and `accSubpoolPoints`
 	newPoints = subpoolPoints + accSubpoolPoints
