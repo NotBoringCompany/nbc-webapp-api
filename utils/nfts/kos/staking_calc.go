@@ -82,7 +82,7 @@ func GetTokenPreAddSubpoolData(
 	accSubpoolPoints := stakingPoolData.TotalYieldPoints
 
 	// add the `subpoolPoints` and `accSubpoolPoints`
-	newPoints = subpoolPoints + accSubpoolPoints
+	newPoints = math.Round((subpoolPoints+accSubpoolPoints)*100) / 100
 
 	// calculate the token share manually
 	reward := stakingPoolData.Reward.Amount
