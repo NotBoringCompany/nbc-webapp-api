@@ -3,6 +3,7 @@ package utils_kos
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"nbc-backend-api-v2/configs"
@@ -85,8 +86,8 @@ func GetTokenPreAddSubpoolData(
 	newPoints = math.Round((subpoolPoints+accSubpoolPoints)*100) / 100
 
 	// calculate the token share manually
-	reward := stakingPoolData.Reward.Amount
-	tokenShare := math.Round(subpoolPoints/newPoints*reward*100) / 100
+	reward := fmt.Sprintf("%v %s", stakingPoolData.Reward.Amount, stakingPoolData.Reward.Name)
+	tokenShare := math.Round(subpoolPoints/newPoints*stakingPoolData.Reward.Amount*100) / 100
 
 	return &models.DetailedTokenSubpoolPreAddCalc{
 		TokenShare:         tokenShare,
@@ -196,8 +197,10 @@ func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainId, su
 	// call `CalculateKeychainCombo`
 	keychainCombo := CalculateKeychainCombo(keychainId, superiorKeychainId)
 
+	subpoolPoints := (BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo) * 100) / 100
+
 	// call `BaseSubpoolPoints`
-	return BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo)
+	return subpoolPoints
 }
 
 /*
