@@ -8,7 +8,9 @@ import (
 	"math"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
+	"strconv"
 	"strings"
+	"sync"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,22 +30,27 @@ func GetTokenPreAddSubpoolData(
 	if collection.Name() != "RHStakingPool" {
 		return nil, errors.New("collection must be RHStakingPool")
 	}
-	// first, we fetch the key data of each key.
+
+	// fetch the key data of each key concurrently
 	keyMetadata, err := FetchSimplifiedMetadataConcurrent(keyIds)
 	if err != nil {
 		return nil, err
 	}
 
-	// create channels for each variable
+	// create buffered channels for each variable
 	luckSumCh := make(chan float64, len(keyMetadata))
-	keyComboCh := make(chan float64, len(keyMetadata))
-	keychainComboCh := make(chan float64, len(keyMetadata))
-	subpoolPointsCh := make(chan float64, len(keyMetadata))
-	stakingPoolDataCh := make(chan *models.StakingPool, len(keyMetadata))
-	var newPoints float64
+	keyComboCh := make(chan float64, 1)
+	keychainComboCh := make(chan float64, 1)
+	subpoolPointsCh := make(chan float64, 1)
+	stakingPoolDataCh := make(chan *models.StakingPool, 1)
+
+	// launch goroutines to calculate each variable concurrently
+	var wg sync.WaitGroup
+	wg.Add(len(keyMetadata))
 
 	for _, metadata := range keyMetadata {
 		go func(md *models.KOSSimplifiedMetadata) {
+			defer wg.Done()
 			luckSumCh <- (md.LuckTrait * md.LuckBoostTrait)
 		}(metadata)
 	}
@@ -61,19 +68,26 @@ func GetTokenPreAddSubpoolData(
 	go func() {
 		subpoolPoints := CalculateSubpoolPoints(keyMetadata, keychainId, superiorKeychainId)
 		subpoolPointsCh <- subpoolPoints
-		// get the accumulated subpool points across the staking pool
 	}()
 
 	go func() {
 		subpoolData, err := GetStakingPoolData(collection, stakingPoolId)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 		stakingPoolDataCh <- subpoolData
 	}()
 
-	// collect results
-	luckSum := <-luckSumCh
+	// wait for all goroutines to complete
+	wg.Wait()
+
+	// collect results from channels
+	luckSum := 0.0
+	for i := 0; i < len(keyMetadata); i++ {
+		luckSum += <-luckSumCh
+	}
+
 	keyCombo := <-keyComboCh
 	keychainCombo := <-keychainComboCh
 	subpoolPoints := <-subpoolPointsCh
@@ -83,11 +97,19 @@ func GetTokenPreAddSubpoolData(
 	accSubpoolPoints := stakingPoolData.TotalYieldPoints
 
 	// add the `subpoolPoints` and `accSubpoolPoints`
-	newPoints = math.Round((subpoolPoints+accSubpoolPoints)*100) / 100
+	newPoints := math.Round((subpoolPoints+accSubpoolPoints)*100) / 100
 
 	// calculate the token share manually
-	reward := fmt.Sprintf("%v %s", stakingPoolData.Reward.Amount, stakingPoolData.Reward.Name)
-	tokenShare := math.Round(subpoolPoints/newPoints*stakingPoolData.Reward.Amount*100) / 100
+	reward := strings.TrimSpace(stakingPoolData.Reward.Name)
+	rewardParts := strings.Split(reward, " ")
+	if len(rewardParts) != 2 {
+		return nil, fmt.Errorf("invalid reward format: %s", reward)
+	}
+	rewardAmount, err := strconv.ParseFloat(rewardParts[0], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid reward amount: %s", rewardParts[0])
+	}
+	tokenShare := math.Round(subpoolPoints/newPoints*rewardAmount*100) / 100
 
 	return &models.DetailedTokenSubpoolPreAddCalc{
 		TokenShare:         tokenShare,
@@ -200,7 +222,7 @@ func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainId, su
 	subpoolPoints := BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo)
 
 	// call `BaseSubpoolPoints`
-	return (subpoolPoints * 100) / 100
+	return math.Round((subpoolPoints * 100) / 100)
 }
 
 /*
