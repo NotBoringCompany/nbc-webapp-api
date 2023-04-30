@@ -563,6 +563,8 @@ func KOSRoutes(app *fiber.App) {
 			})
 		}
 
+		fmt.Printf("addSubpoolRequest: %+v\n", addSubpoolRequest)
+
 		// call the AddSubpool fn
 		err = ApiKOS.AddSubpool(addSubpoolRequest.KeyIds, addSubpoolRequest.StakerWallet, addSubpoolRequest.StakingPoolId, addSubpoolRequest.KeychainId, addSubpoolRequest.SuperiorKeychainId)
 		if err != nil {
