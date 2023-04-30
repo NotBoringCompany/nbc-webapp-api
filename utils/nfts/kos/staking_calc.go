@@ -3,7 +3,6 @@ package utils_kos
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"math"
 	"nbc-backend-api-v2/configs"
@@ -99,12 +98,14 @@ func GetTokenPreAddSubpoolData(
 	newPoints := math.Round((subpoolPoints+accSubpoolPoints)*100) / 100
 
 	// calculate the token share manually
-	reward := fmt.Sprintf("%v %s", stakingPoolData.Reward.Amount, stakingPoolData.Reward.Name)
+	rewardAmt := stakingPoolData.Reward.Amount
+	rewardName := stakingPoolData.Reward.Name
 	tokenShare := math.Round(subpoolPoints/newPoints*stakingPoolData.Reward.Amount*100) / 100
 
 	return &models.DetailedTokenSubpoolPreAddCalc{
 		TokenShare:         tokenShare,
-		PoolTotalReward:    reward,
+		PoolTotalReward:    rewardAmt,
+		PoolRewardName:     rewardName,
 		NewTotalPoolPoints: newPoints,
 		DetailedSubpoolPoints: &models.DetailedSubpoolPoints{
 			LuckAndLuckBoostSum: luckSum,
@@ -210,10 +211,8 @@ func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainId, su
 	// call `CalculateKeychainCombo`
 	keychainCombo := CalculateKeychainCombo(keychainId, superiorKeychainId)
 
-	subpoolPoints := BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo)
-
 	// call `BaseSubpoolPoints`
-	return math.Round((subpoolPoints * 100) / 100)
+	return BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo)
 }
 
 /*
@@ -269,7 +268,7 @@ Base subpool points generated formula for the user's subpool based on the given 
 	`keychainBonus` the keychain bonus of the key
 */
 func BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainBonus float64) float64 {
-	return (100 + math.Pow(luckAndLuckBoostSum, 0.85) + keyCombo) * keychainBonus
+	return math.Round((100+math.Pow(luckAndLuckBoostSum, 0.85)+keyCombo)*keychainBonus*100) / 100
 }
 
 /*

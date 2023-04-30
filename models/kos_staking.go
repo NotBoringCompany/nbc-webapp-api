@@ -123,7 +123,8 @@ Represents all details required before a staker adds a subpool to a specific sta
 */
 type DetailedTokenSubpoolPreAddCalc struct {
 	TokenShare         float64 `json:"tokenShare"`         // the token share of the staker (if they were to add the subpool)
-	PoolTotalReward    string  `json:"totalReward"`        // the total reward of the staking pool
+	PoolTotalReward    float64 `json:"poolTotalReward"`    // the total reward of the staking pool
+	PoolRewardName     string  `json:"poolRewardName"`     // the name of the reward
 	NewTotalPoolPoints float64 `json:"newTotalPoolPoints"` // the new total pool points of the staker after adding the subpool
 	*DetailedSubpoolPoints
 }
