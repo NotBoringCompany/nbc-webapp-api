@@ -8,7 +8,6 @@ import (
 	"math"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -100,16 +99,8 @@ func GetTokenPreAddSubpoolData(
 	newPoints := math.Round((subpoolPoints+accSubpoolPoints)*100) / 100
 
 	// calculate the token share manually
-	reward := strings.TrimSpace(stakingPoolData.Reward.Name)
-	rewardParts := strings.Split(reward, " ")
-	if len(rewardParts) != 2 {
-		return nil, fmt.Errorf("invalid reward format: %s", reward)
-	}
-	rewardAmount, err := strconv.ParseFloat(rewardParts[0], 64)
-	if err != nil {
-		return nil, fmt.Errorf("invalid reward amount: %s", rewardParts[0])
-	}
-	tokenShare := math.Round(subpoolPoints/newPoints*rewardAmount*100) / 100
+	reward := fmt.Sprintf("%v %s", stakingPoolData.Reward.Amount, stakingPoolData.Reward.Name)
+	tokenShare := math.Round(subpoolPoints/newPoints*stakingPoolData.Reward.Amount*100) / 100
 
 	return &models.DetailedTokenSubpoolPreAddCalc{
 		TokenShare:         tokenShare,
