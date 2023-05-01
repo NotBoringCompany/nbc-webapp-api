@@ -285,6 +285,10 @@ func CheckIfStakerBanned(wallet string) (bool, error) {
 	return UtilsKOS.CheckIfStakerBanned(configs.GetCollections(configs.DB, "RHStakerData"), wallet)
 }
 
+func GetStakerSubpools(stakerWallet string) ([]*models.StakingSubpoolWithID, error) {
+	return UtilsKOS.GetStakerSubpools(configs.GetCollections(configs.DB, "RHStakingPool"), stakerWallet)
+}
+
 func CheckPoolTimeAllowanceExceeded(stakingPoolId int) (bool, error) {
 	return UtilsKOS.CheckPoolTimeAllowanceExceeded(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId)
 }

@@ -922,6 +922,60 @@ func GetAllActiveSubpools(collection *mongo.Collection) ([]*models.StakingSubpoo
 }
 
 /*
+Gets all subpools from a staker with wallet `stakerWallet`.
+*/
+func GetStakerSubpools(collection *mongo.Collection, stakerWallet string) ([]*models.StakingSubpoolWithID, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("collection must be RHStakingPool")
+	}
+	// get the staker obj ID from the wallet address
+	stakerObjId, err := GetStakerInstance(collection, stakerWallet)
+	if err != nil {
+		return nil, err
+	}
+
+	// retrieve all staking pools
+	cursor, err := collection.Find(context.Background(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	// get all active and closed subpools from each staking pool.
+	var stakerSubpools []*models.StakingSubpoolWithID
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return nil, err
+		}
+
+		for _, subpool := range stakingPool.ActiveSubpools {
+			if subpool.Staker.Hex() == stakerObjId.Hex() {
+				stakerSubpools = append(stakerSubpools, &models.StakingSubpoolWithID{
+					StakingPoolID:  stakingPool.StakingPoolID,
+					StakingSubpool: subpool,
+				})
+			}
+		}
+
+		for _, subpool := range stakingPool.ClosedSubpools {
+			if subpool.Staker.Hex() == stakerObjId.Hex() {
+				stakerSubpools = append(stakerSubpools, &models.StakingSubpoolWithID{
+					StakingPoolID:  stakingPool.StakingPoolID,
+					StakingSubpool: subpool,
+				})
+			}
+		}
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return stakerSubpools, nil
+}
+
+/*
 Gets Staker Data from `RHStakerData` collection using the staker's object ID.
 */
 func GetStakerFromObjID(collection *mongo.Collection, stakerObjId *primitive.ObjectID) (*models.Staker, error) {

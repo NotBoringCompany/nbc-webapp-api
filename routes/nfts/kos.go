@@ -427,6 +427,24 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	app.Get("/kos/get-staker-subpools/:wallet", func(c *fiber.Ctx) error {
+		wallet := c.Params("wallet")
+		res, err := ApiKOS.GetStakerSubpools(wallet)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully fetch staker subpools for given wallet: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully fetched staker subpools for given wallet.",
+			Data:    &fiber.Map{"stakerSubpools": res},
+		})
+	})
+
 	app.Get("/kos/calculate-subpool-token-share/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
 		// get the stakingPoolId and subpoolId params from the request query params
 		stakingPoolIdParam := c.Params("stakingPoolId")
