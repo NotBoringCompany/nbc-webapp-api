@@ -188,7 +188,7 @@ func CalcTotalTokenShare(collection *mongo.Collection, stakingPoolId int, staker
 		totalTokenShare += rewardShare
 	}
 
-	return totalTokenShare, nil
+	return math.Round(totalTokenShare*100) / 100, nil
 }
 
 /*
