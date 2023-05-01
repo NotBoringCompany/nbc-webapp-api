@@ -319,6 +319,33 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	app.Get("/kos/get-all-staked-key-ids/:stakingPoolId", func(c *fiber.Ctx) error {
+		stakingPoolId := c.Params("stakingPoolId")
+		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given stakingPoolId to int.",
+				Data:    nil,
+			})
+		}
+
+		res, err := ApiKOS.GetAllStakedKeyIDs(stakingPoolIdInt)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully fetch all staked key ids for given stakingPoolId: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully fetched all staked key ids for given stakingPoolId.",
+			Data:    &fiber.Map{"allStakedKeyIds": res},
+		})
+	})
+
 	// TotalTokenReward route
 	app.Get("/kos/total-token-reward/:stakingPoolId", func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")
