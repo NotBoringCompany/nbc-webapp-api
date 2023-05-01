@@ -929,7 +929,7 @@ func GetStakerSubpools(collection *mongo.Collection, stakerWallet string) ([]*mo
 		return nil, errors.New("collection must be RHStakingPool")
 	}
 	// get the staker obj ID from the wallet address
-	stakerObjId, err := GetStakerInstance(collection, stakerWallet)
+	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
 	if err != nil {
 		return nil, err
 	}
