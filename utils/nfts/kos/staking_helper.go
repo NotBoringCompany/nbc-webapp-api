@@ -1004,44 +1004,6 @@ func GetAllStakedKeyIDs(collection *mongo.Collection, stakingPoolId int) ([]int,
 	return stakedKeyIDs, nil
 }
 
-// func GetAllStakedKeyIDs(collection *mongo.Collection, stakingPoolId int) ([]int, error) {
-// 	if collection.Name() != "RHStakingPool" {
-// 		return nil, errors.New("invalid collection name")
-// 	}
-
-// 	pipeline := mongo.Pipeline{
-// 		bson.D{{"$match", bson.D{{"stakingPoolID", stakingPoolId}}}},              // match the staking pool ID with `stakingPoolId`
-// 		bson.D{{"$unwind", "$activeSubpools"}},                                    // unwinds the activeSubpools array to get separate document for each `Subpool` in the array
-// 		bson.D{{"$unwind", "$activeSubpools.stakedKeys"}},                         // unwinds the stakedKeys array to get separate document for each `StakedKey` in the array
-// 		bson.D{{"$group", bson.D{{"_id", "$activeSubpools.stakedKeys.tokenID"}}}}, // groups the documents by the TokenID field
-// 		bson.D{{"$project", bson.D{{"_id", 0}, {"TokenID", "$_id"}}}},             // only project the TokenID field
-// 	}
-
-// 	cursor, err := collection.Aggregate(context.Background(), pipeline)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	var tokenIDs []int
-// 	for cursor.Next(context.Background()) {
-// 		var result struct {
-// 			TokenID int `bson:"TokenID"`
-// 		}
-// 		if err := cursor.Decode(&result); err != nil {
-// 			return nil, err
-// 		}
-// 		tokenIDs = append(tokenIDs, result.TokenID)
-// 	}
-
-// 	if err := cursor.Err(); err != nil {
-// 		return nil, err
-// 	}
-
-// 	defer cursor.Close(context.Background())
-
-// 	return tokenIDs, nil
-// }
-
 /*
 Gets all the keychain IDs that have been staked in a specific staking pool.
 */
