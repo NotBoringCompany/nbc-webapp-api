@@ -107,6 +107,11 @@ func ClaimReward(collection *mongo.Collection, wallet string, stakingPoolId, sub
 		return errors.New("subpool is banned from claiming rewards")
 	}
 
+	// checks if reward is claimable.
+	if !subpool.RewardClaimable {
+		return errors.New("rewards for subpool is not claimable")
+	}
+
 	// checks if reward has been claimed.
 	if subpool.RewardClaimed {
 		return errors.New("reward has already been claimed")
@@ -189,6 +194,7 @@ func CloseSubpoolsOnStakeEnd(collection *mongo.Collection) error {
 		// update all subpools in `ActiveSubpools` and move them over to `ClosedSubpools`.
 		for _, subpool := range stakingPool.ActiveSubpools {
 			subpool.ExitTime = now
+			subpool.RewardClaimable = true
 			stakingPool.ClosedSubpools = append(stakingPool.ClosedSubpools, subpool)
 
 			log.Printf("moved subpool %v from staking pool %v to closed subpools \n", subpool.SubpoolID, stakingPool.StakingPoolID)
@@ -1311,6 +1317,7 @@ func AddSubpool(
 		StakedKeychainID:         keychainId,
 		StakedSuperiorKeychainID: superiorKeychainId,
 		SubpoolPoints:            math.Round(subpoolPoints*100) / 100, // 2 decimal places
+		RewardClaimable:          false,
 	}
 
 	updatePool := bson.M{"$push": bson.M{"activeSubpools": subpool}}
