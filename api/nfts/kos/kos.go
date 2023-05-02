@@ -211,19 +211,6 @@ func FetchSubpoolData(stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, 
 		return nil, err
 	}
 
-	var stakedKeychainID *int
-	var stakedSuperiorKeychainID *int
-	// if subpool.StakedKeychainID != -1 {
-	// 	stakedKeychainID = &subpool.StakedKeychainID
-	// } else {
-	// 	stakedKeychainID = nil
-	// }
-	// if subpool.StakedSuperiorKeychainID != -1 {
-	// 	stakedSuperiorKeychainID = &subpool.StakedSuperiorKeychainID
-	// } else {
-	// 	stakedSuperiorKeychainID = nil
-	// }
-
 	// return the subpool data in the format we want
 	return &models.StakingSubpoolAlt{
 		SubpoolID:                subpool.SubpoolID,
@@ -231,8 +218,8 @@ func FetchSubpoolData(stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, 
 		EnterTime:                subpool.EnterTime,
 		ExitTime:                 subpool.ExitTime,
 		StakedKeys:               subpool.StakedKeys,
-		StakedKeychainID:         stakedKeychainID,
-		StakedSuperiorKeychainID: stakedSuperiorKeychainID,
+		StakedKeychainID:         subpool.StakedKeychainID,
+		StakedSuperiorKeychainID: subpool.StakedSuperiorKeychainID,
 		SubpoolPoints:            subpool.SubpoolPoints,
 		RewardClaimed:            subpool.RewardClaimed,
 		Banned:                   subpool.Banned,

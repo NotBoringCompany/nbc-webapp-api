@@ -618,9 +618,6 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 		stakedSuperiorKeychainId = nil
 	}
 
-	fmt.Printf("Staked Keychain ID: %d\n", stakedKeychainId)
-	fmt.Printf("Staked Superior Keychain ID: %d\n", stakedKeychainId)
-
 	return &models.StakingSubpoolAlt{
 		SubpoolID:                subpoolData.SubpoolID,
 		Staker:                   subpoolData.Staker,
