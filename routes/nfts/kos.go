@@ -226,6 +226,42 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	app.Get("/kos/calculate-subpool-token-share/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
+		stakingPoolId := c.Params("stakingPoolId")
+		subpoolId := c.Params("subpoolId")
+		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given stakingPoolId to int.",
+				Data:    nil,
+			})
+		}
+		subpoolIdInt, err := strconv.Atoi(subpoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given subpoolId to int.",
+				Data:    nil,
+			})
+		}
+
+		res, err := ApiKOS.CalculateSubpoolTokenShare(stakingPoolIdInt, subpoolIdInt)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully calculate subpool token share for given stakingPoolId and subpoolId: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully calculated subpool token share for given stakingPoolId and subpoolId.",
+			Data:    &fiber.Map{"subpoolTokenShare": res},
+		})
+	})
+
 	// GetStakingPoolData route
 	app.Get("/kos/staking-pool-data/:stakingPoolId", func(c *fiber.Ctx) error {
 		id := c.Params("stakingPoolId")
