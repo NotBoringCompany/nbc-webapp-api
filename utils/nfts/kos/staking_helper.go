@@ -607,12 +607,12 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 	var stakedKeychainId *int
 	var stakedSuperiorKeychainId *int
 
-	if subpoolData.StakedKeychainID != 1 {
+	if subpoolData.StakedKeychainID != -1 {
 		stakedKeychainId = &subpoolData.StakedKeychainID
 	} else {
 		stakedSuperiorKeychainId = nil
 	}
-	if subpoolData.StakedSuperiorKeychainID != 1 {
+	if subpoolData.StakedSuperiorKeychainID != -1 {
 		stakedSuperiorKeychainId = &subpoolData.StakedSuperiorKeychainID
 	} else {
 		stakedSuperiorKeychainId = nil
