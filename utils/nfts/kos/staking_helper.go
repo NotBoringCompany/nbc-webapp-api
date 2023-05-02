@@ -604,8 +604,6 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 		nftData = append(nftData, modified)
 	}
 
-	fmt.Printf("nftData: %+v\n", nftData)
-
 	return &models.StakingSubpoolAlt{
 		SubpoolID:                subpoolData.SubpoolID,
 		Staker:                   subpoolData.Staker,
