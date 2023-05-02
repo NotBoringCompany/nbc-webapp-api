@@ -141,6 +141,8 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	app.Get("/kos/")
+
 	app.Get("/kos/fetch-simplified-metadata/:tokenId", func(c *fiber.Ctx) error {
 		tokenId := c.Params("tokenId")
 		tokenIdInt, err := strconv.Atoi(tokenId)
@@ -659,6 +661,43 @@ func KOSRoutes(app *fiber.App) {
 		return c.JSON(&responses.Response{
 			Status:  fiber.StatusOK,
 			Message: "successfully added subpool.",
+			Data:    nil,
+		})
+	})
+
+	// UnstakeFromSubpool route
+	app.Post("/kos/unstake-from-subpool", func(c *fiber.Ctx) error {
+		type UnstakeFromSubpoolRequest struct {
+			StakingPoolID int `json:"stakingPoolId"`
+			SubpoolID     int `json:"subpoolId"`
+		}
+
+		// parse the req body into the UnstakeFromSubpoolRequest struct
+		var unstakeFromSubpoolRequest UnstakeFromSubpoolRequest
+		err := c.BodyParser(&unstakeFromSubpoolRequest)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully parse request body: %v", err),
+				Data:    nil,
+			})
+		}
+
+		fmt.Printf("unstakeFromSubpoolRequest: %+v\n", unstakeFromSubpoolRequest)
+
+		// call the UnstakeFromSubpool fn
+		err = ApiKOS.UnstakeFromSubpool(unstakeFromSubpoolRequest.StakingPoolID, unstakeFromSubpoolRequest.SubpoolID)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully unstake from subpool: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: fmt.Sprintf("successfully unstaked from subpool %d of staking pool id %d", unstakeFromSubpoolRequest.SubpoolID, unstakeFromSubpoolRequest.StakingPoolID),
 			Data:    nil,
 		})
 	})
