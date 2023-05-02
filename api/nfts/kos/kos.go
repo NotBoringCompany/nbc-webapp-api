@@ -213,16 +213,16 @@ func FetchSubpoolData(stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, 
 
 	// return the subpool data in the format we want
 	return &models.StakingSubpoolAlt{
-		SubpoolID:                subpool.SubpoolID,
-		Staker:                   subpool.Staker,
-		EnterTime:                subpool.EnterTime,
-		ExitTime:                 subpool.ExitTime,
-		StakedKeys:               subpool.StakedKeys,
-		StakedKeychainID:         subpool.StakedKeychainID,
-		StakedSuperiorKeychainID: subpool.StakedSuperiorKeychainID,
-		SubpoolPoints:            subpool.SubpoolPoints,
-		RewardClaimed:            subpool.RewardClaimed,
-		Banned:                   subpool.Banned,
+		SubpoolID:              subpool.SubpoolID,
+		Staker:                 subpool.Staker,
+		EnterTime:              subpool.EnterTime,
+		ExitTime:               subpool.ExitTime,
+		StakedKeys:             subpool.StakedKeys,
+		StakedKeychain:         subpool.StakedKeychain,
+		StakedSuperiorKeychain: subpool.StakedSuperiorKeychain,
+		SubpoolPoints:          subpool.SubpoolPoints,
+		RewardClaimed:          subpool.RewardClaimed,
+		Banned:                 subpool.Banned,
 	}, nil
 }
 
