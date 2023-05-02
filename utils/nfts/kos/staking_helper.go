@@ -583,7 +583,7 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 		return nil, err
 	}
 
-	nftData := make([]*models.NFTData, len(subpoolData.StakedKeys))
+	var nftData []*models.NFTData
 	for _, nft := range subpoolData.StakedKeys {
 		metadata := map[string]interface{}{
 			"TokenID":        nft.TokenID,
@@ -603,6 +603,8 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 
 		nftData = append(nftData, modified)
 	}
+
+	fmt.Printf("nftData: %+v\n", nftData)
 
 	return &models.StakingSubpoolAlt{
 		SubpoolID:                subpoolData.SubpoolID,
