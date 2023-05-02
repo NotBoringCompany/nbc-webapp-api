@@ -264,6 +264,14 @@ func CalculateSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) fl
 	return UtilsKOS.CalculateSubpoolPoints(metadatas, keychainId, superiorKeychainId)
 }
 
+func BacktrackSubpoolPoints(stakingPoolId, subpoolId int) (*struct {
+	LuckAndLuckBoostSum float64 `json:"luckAndLuckBoostSum"`
+	KeyCombo            float64 `json:"keyCombo"`
+	KeychainCombo       float64 `json:"keychainCombo"`
+	TotalSubpoolPoints  float64 `json:"totalSubpoolPoints"`
+}, error) {
+	return UtilsKOS.BacktrackSubpoolPoints(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId)
+}
 func CalculateSubpoolTokenShare(stakingPoolId, subpoolId int) (float64, error) {
 	return UtilsKOS.CalcSubpoolTokenShare(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId)
 }

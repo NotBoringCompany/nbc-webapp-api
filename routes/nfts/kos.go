@@ -104,6 +104,42 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	app.Get("/kos/backtrack-subpool-points/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
+		stakingPoolId := c.Params("stakingPoolId")
+		subpoolId := c.Params("subpoolId")
+		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given stakingPoolId to int.",
+				Data:    nil,
+			})
+		}
+		subpoolIdInt, err := strconv.Atoi(subpoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given subpoolId to int.",
+				Data:    nil,
+			})
+		}
+
+		res, err := ApiKOS.BacktrackSubpoolPoints(stakingPoolIdInt, subpoolIdInt)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully backtrack subpool points: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully backtracked subpool points.",
+			Data:    &fiber.Map{"backtrackSubpoolPoints": res},
+		})
+	})
+
 	// FetchSubpoolData route
 	app.Get("/kos/fetch-subpool-data/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")

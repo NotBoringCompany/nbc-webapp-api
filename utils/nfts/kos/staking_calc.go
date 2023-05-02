@@ -117,6 +117,58 @@ func GetTokenPreAddSubpoolData(
 }
 
 /*
+Gets the detailed calculation for how the subpool's points were calculated.
+*/
+func BacktrackSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpoolId int) (*struct {
+	LuckAndLuckBoostSum float64 `json:"luckAndLuckBoostSum"`
+	KeyCombo            float64 `json:"keyCombo"`
+	KeychainCombo       float64 `json:"keychainCombo"`
+	TotalSubpoolPoints  float64 `json:"totalSubpoolPoints"`
+}, error) {
+	if collection.Name() != "RHStakingPool" {
+		return nil, errors.New("collection must be RHStakingPool")
+	}
+
+	// get the subpool data
+	subpoolData, err := GetSubpoolData(collection, stakingPoolId, subpoolId)
+	if err != nil {
+		return nil, err
+	}
+
+	// get the luck and luck boost sum
+	luckAndLuckBoostSum := 0.0
+	for _, key := range subpoolData.StakedKeys {
+		luckAndLuckBoostSum += (key.LuckTrait * key.LuckBoostTrait)
+	}
+
+	// get the keycombo
+	keyCombo := CalculateKeyCombo(subpoolData.StakedKeys)
+	// get the keychain combo
+	keychainCombo := CalculateKeychainCombo(subpoolData.StakedKeychainID, subpoolData.StakedSuperiorKeychainID)
+	// get the total subpool points
+	subpoolPoints := CalculateSubpoolPoints(subpoolData.StakedKeys, subpoolData.StakedKeychainID, subpoolData.StakedSuperiorKeychainID)
+
+	// check if subpool points matches the one from `subpoolData`
+	if subpoolPoints != subpoolData.SubpoolPoints {
+		return nil, errors.New("subpool points do not match")
+	}
+
+	data := &struct {
+		LuckAndLuckBoostSum float64 `json:"luckAndLuckBoostSum"`
+		KeyCombo            float64 `json:"keyCombo"`
+		KeychainCombo       float64 `json:"keychainCombo"`
+		TotalSubpoolPoints  float64 `json:"totalSubpoolPoints"`
+	}{
+		LuckAndLuckBoostSum: luckAndLuckBoostSum,
+		KeyCombo:            keyCombo,
+		KeychainCombo:       keychainCombo,
+		TotalSubpoolPoints:  subpoolPoints,
+	}
+
+	return data, nil
+}
+
+/*
 ONLY FOR TOKEN REWARDS: calculate the reward share for a specific subpool of ID `subpoolId` for a staking pool with ID `stakingPoolId`.
 */
 func CalcSubpoolTokenShare(collection *mongo.Collection, stakingPoolId, subpoolId int) (float64, error) {
