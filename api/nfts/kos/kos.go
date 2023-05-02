@@ -206,30 +206,30 @@ Fetches the subpool data but with an API request format for StakingSubpool data.
 */
 func FetchSubpoolData(stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, error) {
 	// fetch the subpool data
-	subpool, err := UtilsKOS.GetSubpoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId)
+	subpool, err := UtilsKOS.GetSubpoolDataAPI(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId)
 	if err != nil {
 		return nil, err
 	}
 
 	var stakedKeychainID *int
 	var stakedSuperiorKeychainID *int
-	if subpool.StakedKeychainID != -1 {
-		stakedKeychainID = &subpool.StakedKeychainID
-	} else {
-		stakedKeychainID = nil
-	}
-	if subpool.StakedSuperiorKeychainID != -1 {
-		stakedSuperiorKeychainID = &subpool.StakedSuperiorKeychainID
-	} else {
-		stakedSuperiorKeychainID = nil
-	}
+	// if subpool.StakedKeychainID != -1 {
+	// 	stakedKeychainID = &subpool.StakedKeychainID
+	// } else {
+	// 	stakedKeychainID = nil
+	// }
+	// if subpool.StakedSuperiorKeychainID != -1 {
+	// 	stakedSuperiorKeychainID = &subpool.StakedSuperiorKeychainID
+	// } else {
+	// 	stakedSuperiorKeychainID = nil
+	// }
 
 	// return the subpool data in the format we want
 	return &models.StakingSubpoolAlt{
 		SubpoolID:                subpool.SubpoolID,
 		Staker:                   subpool.Staker,
-		EnterTime:                subpool.EnterTime.Unix(),
-		ExitTime:                 subpool.ExitTime.Unix(),
+		EnterTime:                subpool.EnterTime,
+		ExitTime:                 subpool.ExitTime,
 		StakedKeys:               subpool.StakedKeys,
 		StakedKeychainID:         stakedKeychainID,
 		StakedSuperiorKeychainID: stakedSuperiorKeychainID,

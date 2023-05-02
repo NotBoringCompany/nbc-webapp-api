@@ -575,6 +575,51 @@ func GetSubpoolData(collection *mongo.Collection, stakingPoolId, subpoolId int) 
 }
 
 /*
+`GetSubpoolData` but API-friendly.
+*/
+func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, error) {
+	subpoolData, err := GetSubpoolData(collection, stakingPoolId, subpoolId)
+	if err != nil {
+		return nil, err
+	}
+
+	nftData := make([]*models.NFTData, len(subpoolData.StakedKeys))
+	for _, nft := range subpoolData.StakedKeys {
+		metadata := map[string]interface{}{
+			"TokenID":        nft.TokenID,
+			"AnimationUrl":   nft.AnimationUrl,
+			"HouseTrait":     nft.HouseTrait,
+			"TypeTrait":      nft.TypeTrait,
+			"LuckTrait":      nft.LuckTrait,
+			"LuckBoostTrait": nft.LuckBoostTrait,
+		}
+
+		modified := &models.NFTData{
+			Name:     fmt.Sprint("Key Of Salvation #", nft.TokenID),
+			ImageUrl: nft.AnimationUrl,
+			TokenID:  nft.TokenID,
+			Metadata: metadata,
+		}
+
+		nftData = append(nftData, modified)
+	}
+
+	return &models.StakingSubpoolAlt{
+		SubpoolID:                subpoolData.SubpoolID,
+		Staker:                   subpoolData.Staker,
+		EnterTime:                subpoolData.EnterTime.Unix(),
+		ExitTime:                 subpoolData.ExitTime.Unix(),
+		StakedKeys:               nftData,
+		StakedKeychainID:         &subpoolData.StakedKeychainID,
+		StakedSuperiorKeychainID: &subpoolData.StakedSuperiorKeychainID,
+		SubpoolPoints:            subpoolData.SubpoolPoints,
+		RewardClaimable:          subpoolData.RewardClaimable,
+		RewardClaimed:            subpoolData.RewardClaimed,
+		Banned:                   subpoolData.Banned,
+	}, nil
+}
+
+/*
 Gets the start time of a staking pool.
 */
 func GetStartTimeOfStakingPool(collection *mongo.Collection, stakingPoolId int) (time.Time, error) {
