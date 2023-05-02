@@ -604,32 +604,30 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 		nftData = append(nftData, modified)
 	}
 
-	var stakedKeychainId *int
-	var stakedSuperiorKeychainId *int
-
-	if subpoolData.StakedKeychainID != -1 {
-		stakedKeychainId = &subpoolData.StakedKeychainID
-	} else {
-		stakedSuperiorKeychainId = nil
+	keychainData := &models.NFTData{
+		Name:     fmt.Sprint("Keychain #", subpoolData.StakedKeychainID),
+		ImageUrl: "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/keychain.mp4",
+		TokenID:  subpoolData.StakedKeychainID,
 	}
-	if subpoolData.StakedSuperiorKeychainID != -1 {
-		stakedSuperiorKeychainId = &subpoolData.StakedSuperiorKeychainID
-	} else {
-		stakedSuperiorKeychainId = nil
+
+	superiorKeychainData := &models.NFTData{
+		Name:     fmt.Sprint("Superior Keychain #", subpoolData.StakedSuperiorKeychainID),
+		ImageUrl: "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/superiorKeychain.mp4",
+		TokenID:  subpoolData.StakedSuperiorKeychainID,
 	}
 
 	return &models.StakingSubpoolAlt{
-		SubpoolID:                subpoolData.SubpoolID,
-		Staker:                   subpoolData.Staker,
-		EnterTime:                subpoolData.EnterTime.Unix(),
-		ExitTime:                 subpoolData.ExitTime.Unix(),
-		StakedKeys:               nftData,
-		StakedKeychainID:         stakedKeychainId,
-		StakedSuperiorKeychainID: stakedSuperiorKeychainId,
-		SubpoolPoints:            subpoolData.SubpoolPoints,
-		RewardClaimable:          subpoolData.RewardClaimable,
-		RewardClaimed:            subpoolData.RewardClaimed,
-		Banned:                   subpoolData.Banned,
+		SubpoolID:              subpoolData.SubpoolID,
+		Staker:                 subpoolData.Staker,
+		EnterTime:              subpoolData.EnterTime.Unix(),
+		ExitTime:               subpoolData.ExitTime.Unix(),
+		StakedKeys:             nftData,
+		StakedKeychain:         keychainData,
+		StakedSuperiorKeychain: superiorKeychainData,
+		SubpoolPoints:          subpoolData.SubpoolPoints,
+		RewardClaimable:        subpoolData.RewardClaimable,
+		RewardClaimed:          subpoolData.RewardClaimed,
+		Banned:                 subpoolData.Banned,
 	}, nil
 }
 
