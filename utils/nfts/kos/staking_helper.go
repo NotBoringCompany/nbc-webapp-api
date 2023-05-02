@@ -586,12 +586,12 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 	var nftData []*models.NFTData
 	for _, nft := range subpoolData.StakedKeys {
 		metadata := map[string]interface{}{
-			"TokenID":        nft.TokenID,
-			"AnimationUrl":   nft.AnimationUrl,
-			"HouseTrait":     nft.HouseTrait,
-			"TypeTrait":      nft.TypeTrait,
-			"LuckTrait":      nft.LuckTrait,
-			"LuckBoostTrait": nft.LuckBoostTrait,
+			"tokenID":        nft.TokenID,
+			"animationUrl":   nft.AnimationUrl,
+			"houseTrait":     nft.HouseTrait,
+			"typeTrait":      nft.TypeTrait,
+			"luckTrait":      nft.LuckTrait,
+			"luckBoostTrait": nft.LuckBoostTrait,
 		}
 
 		modified := &models.NFTData{
