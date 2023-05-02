@@ -141,8 +141,6 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/")
-
 	app.Get("/kos/fetch-simplified-metadata/:tokenId", func(c *fiber.Ctx) error {
 		tokenId := c.Params("tokenId")
 		tokenIdInt, err := strconv.Atoi(tokenId)
