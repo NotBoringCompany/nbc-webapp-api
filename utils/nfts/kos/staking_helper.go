@@ -604,14 +604,28 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 		nftData = append(nftData, modified)
 	}
 
+	var stakedKeychainId *int
+	var stakedSuperiorKeychainId *int
+
+	if subpoolData.StakedKeychainID != 1 {
+		stakedKeychainId = &subpoolData.StakedKeychainID
+	} else {
+		stakedSuperiorKeychainId = nil
+	}
+	if subpoolData.StakedSuperiorKeychainID != 1 {
+		stakedSuperiorKeychainId = &subpoolData.StakedSuperiorKeychainID
+	} else {
+		stakedSuperiorKeychainId = nil
+	}
+
 	return &models.StakingSubpoolAlt{
 		SubpoolID:                subpoolData.SubpoolID,
 		Staker:                   subpoolData.Staker,
 		EnterTime:                subpoolData.EnterTime.Unix(),
 		ExitTime:                 subpoolData.ExitTime.Unix(),
 		StakedKeys:               nftData,
-		StakedKeychainID:         &subpoolData.StakedKeychainID,
-		StakedSuperiorKeychainID: &subpoolData.StakedSuperiorKeychainID,
+		StakedKeychainID:         stakedKeychainId,
+		StakedSuperiorKeychainID: stakedSuperiorKeychainId,
 		SubpoolPoints:            subpoolData.SubpoolPoints,
 		RewardClaimable:          subpoolData.RewardClaimable,
 		RewardClaimed:            subpoolData.RewardClaimed,
