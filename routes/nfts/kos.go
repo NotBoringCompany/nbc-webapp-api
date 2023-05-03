@@ -661,30 +661,25 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// ClaimReward route
-	app.Post("/kos/claim-reward/:wallet/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
-		wallet := c.Params("wallet")
-		stakingPoolIdParam := c.Params("stakingPoolId")
-		subpoolIdParam := c.Params("subpoolId")
-
-		stakingPoolId, err := strconv.Atoi(stakingPoolIdParam)
-		if err != nil {
-			return c.JSON(&responses.Response{
-				Status:  fiber.StatusBadRequest,
-				Message: fmt.Sprintf("unable to successfully convert given stakingPoolId to int: %v", err),
-				Data:    nil,
-			})
+	app.Post("/kos/claim-reward", func(c *fiber.Ctx) error {
+		type ClaimRewardRequest struct {
+			Wallet        string `json:"wallet"`
+			StakingPoolID int    `json:"stakingPoolId"`
+			SubpoolID     int    `json:"subpoolId"`
 		}
-		subpoolId, err := strconv.Atoi(subpoolIdParam)
-		if err != nil {
+
+		// get the request body
+		var claimRewardRequest ClaimRewardRequest
+		if err := c.BodyParser(&claimRewardRequest); err != nil {
 			return c.JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
-				Message: fmt.Sprintf("unable to successfully convert given subpoolId to int: %v", err),
+				Message: fmt.Sprintf("unable to successfully parse request body: %v", err),
 				Data:    nil,
 			})
 		}
 
 		// call the ClaimReward function
-		err = ApiKOS.ClaimReward(wallet, stakingPoolId, subpoolId)
+		err := ApiKOS.ClaimReward(claimRewardRequest.Wallet, claimRewardRequest.StakingPoolID, claimRewardRequest.SubpoolID)
 		if err != nil {
 			return c.JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
