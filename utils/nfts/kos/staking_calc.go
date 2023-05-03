@@ -159,7 +159,7 @@ func BacktrackSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpool
 		KeychainCombo       float64 `json:"keychainCombo"`
 		TotalSubpoolPoints  float64 `json:"totalSubpoolPoints"`
 	}{
-		LuckAndLuckBoostSum: luckAndLuckBoostSum,
+		LuckAndLuckBoostSum: math.Round(luckAndLuckBoostSum*100) / 100,
 		KeyCombo:            keyCombo,
 		KeychainCombo:       keychainCombo,
 		TotalSubpoolPoints:  subpoolPoints,
