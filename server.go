@@ -29,6 +29,14 @@ func main() {
 
 	RoutesNFTs.KOSRoutes(app)
 
+	app.Get("/add-staking-pool", func(c *fiber.Ctx) error {
+		err := ApiKOS.AddStakingPool("REC Token", 500000)
+		if err != nil {
+			return c.JSON(err)
+		}
+		return c.JSON("success")
+	})
+
 	// SCHEDULERS
 	ApiKOS.UpdateTotalYieldPointsScheduler().Start()
 	ApiKOS.CloseSubpoolsOnStakeEndScheduler().Start()

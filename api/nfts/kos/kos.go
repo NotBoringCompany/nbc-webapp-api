@@ -300,6 +300,10 @@ func AddSubpool(keyIds []int, stakerWallet string, stakingPoolId, keychainId, su
 	return UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet, metadatas, keychainId, superiorKeychainId)
 }
 
+func AddStakingPool(rewardName string, rewardAmount float64) error {
+	return UtilsKOS.AddStakingPool(configs.GetCollections(configs.DB, "RHStakingPool"), rewardName, rewardAmount)
+}
+
 func ClaimReward(stakerWallet string, stakingPoolId, subpoolId int) error {
 	return UtilsKOS.ClaimReward(configs.GetCollections(configs.DB, "RHStakingPool"), stakerWallet, stakingPoolId, subpoolId)
 }
