@@ -660,6 +660,46 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	// ClaimReward route
+	app.Post("/kos/claim-reward/:wallet/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
+		wallet := c.Params("wallet")
+		stakingPoolIdParam := c.Params("stakingPoolId")
+		subpoolIdParam := c.Params("subpoolId")
+
+		stakingPoolId, err := strconv.Atoi(stakingPoolIdParam)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully convert given stakingPoolId to int: %v", err),
+				Data:    nil,
+			})
+		}
+		subpoolId, err := strconv.Atoi(subpoolIdParam)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully convert given subpoolId to int: %v", err),
+				Data:    nil,
+			})
+		}
+
+		// call the ClaimReward function
+		err = ApiKOS.ClaimReward(wallet, stakingPoolId, subpoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully claim reward: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully claimed reward.",
+			Data:    nil,
+		})
+	})
+
 	app.Post("/kos/add-subpool", func(c *fiber.Ctx) error {
 		type AddSubpoolRequest struct {
 			KeyIds             []int  `json:"keyIds"`
