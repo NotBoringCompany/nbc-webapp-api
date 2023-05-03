@@ -381,13 +381,13 @@ func UpdateTotalYieldPointsScheduler() *cron.Cron {
 }
 
 /*
-Adds a scheduler to `CloseSubpoolsOnStakeEnd` to run it every hour.
+Adds a scheduler to `CloseSubpoolsOnStakeEnd` to run it every 5 mins.
 */
 func CloseSubpoolsOnStakeEndScheduler() *cron.Cron {
 	scheduler := cron.New()
 
-	// runs every hour
-	scheduler.AddFunc("0 0 */1 * * *", func() {
+	// runs every 5 mins
+	scheduler.AddFunc("*/5 * * * *", func() {
 		err := UtilsKOS.CloseSubpoolsOnStakeEnd(configs.GetCollections(configs.DB, "RHStakingPool"))
 		if err != nil {
 			panic(err)
