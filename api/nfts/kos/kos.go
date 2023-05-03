@@ -221,6 +221,7 @@ func FetchSubpoolData(stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, 
 		StakedKeychain:         subpool.StakedKeychain,
 		StakedSuperiorKeychain: subpool.StakedSuperiorKeychain,
 		SubpoolPoints:          subpool.SubpoolPoints,
+		RewardClaimable:        subpool.RewardClaimable,
 		RewardClaimed:          subpool.RewardClaimed,
 		Banned:                 subpool.Banned,
 	}, nil
