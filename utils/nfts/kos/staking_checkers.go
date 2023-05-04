@@ -3,7 +3,6 @@ package utils_kos
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
@@ -166,7 +165,7 @@ func CheckStakingPoolStakerCount(collection *mongo.Collection) error {
 					return err
 				}
 
-				fmt.Printf("staking pool %d has been cancelled due to insufficient stakers\n", stakingPool.ID)
+				log.Printf("staking pool %d has been cancelled due to insufficient stakers\n", stakingPool.ID)
 			}
 		}
 	}
