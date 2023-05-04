@@ -147,7 +147,7 @@ func ClaimReward(collection *mongo.Collection, wallet string, stakingPoolId, sub
 }
 
 /*
-Updates a specific Subpool with ID `subpoolId` in Staking Pool `stakingPoolId`'s `RewardClaimed` field to true.
+Updates a specific subpool with ID `subpoolId` in Staking Pool `stakingPoolId`'s `RewardClaimed` field to true.
 This function does NOT check if `rewardClaimed` has been set to true already. this must be checked beforehand.
 */
 func UpdateRewardClaimedToTrue(collection *mongo.Collection, stakingPoolId, subpoolId int) error {
