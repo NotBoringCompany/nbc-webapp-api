@@ -3,6 +3,7 @@ package routes_nfts
 import (
 	"fmt"
 	ApiKOS "nbc-backend-api-v2/api/nfts/kos"
+	"os"
 	"strconv"
 	"strings"
 
@@ -730,6 +731,51 @@ func KOSRoutes(app *fiber.App) {
 		return c.JSON(&responses.Response{
 			Status:  fiber.StatusOK,
 			Message: "successfully added subpool.",
+			Data:    nil,
+		})
+	})
+
+	// calls the add staking pool function BUT with a password
+	app.Post("/kos/add-staking-pool", func(c *fiber.Ctx) error {
+		type AddStakingPoolRequest struct {
+			RewardAmount float64 `json:"rewardAmount"`
+			RewardName   string  `json:"rewardName"`
+			Password     string  `json:"password"`
+		}
+
+		// parse the req body into the AddStakingPoolRequest struct
+		var addStakingPoolRequest AddStakingPoolRequest
+		err := c.BodyParser(&addStakingPoolRequest)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully parse request body: %v", err),
+				Data:    nil,
+			})
+		}
+
+		// check if password matches the .env password
+		if addStakingPoolRequest.Password != os.Getenv("API_PASSWORD") {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "password does not match.",
+				Data:    nil,
+			})
+		}
+
+		// call the AddStakingPool fn
+		err = ApiKOS.AddStakingPool(addStakingPoolRequest.RewardName, addStakingPoolRequest.RewardAmount)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully add staking pool: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully added staking pool.",
 			Data:    nil,
 		})
 	})
