@@ -121,6 +121,7 @@ Gets the detailed calculation for how the subpool's points were calculated.
 */
 func BacktrackSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpoolId int) (*struct {
 	LuckAndLuckBoostSum float64 `json:"luckAndLuckBoostSum"`
+	AngelMultiplier     float64 `json:"angelMultiplier"`
 	KeyCombo            float64 `json:"keyCombo"`
 	KeychainCombo       float64 `json:"keychainCombo"`
 	TotalSubpoolPoints  float64 `json:"totalSubpoolPoints"`
@@ -141,6 +142,9 @@ func BacktrackSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpool
 		luckAndLuckBoostSum += (key.LuckTrait * key.LuckBoostTrait)
 	}
 
+	// get the angel multiplier
+	angelMultiplier := CalculateAngelMultiplier(subpoolData.StakedKeys)
+
 	// get the keycombo
 	keyCombo := CalculateKeyCombo(subpoolData.StakedKeys)
 	// get the keychain combo
@@ -155,11 +159,13 @@ func BacktrackSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpool
 
 	data := &struct {
 		LuckAndLuckBoostSum float64 `json:"luckAndLuckBoostSum"`
+		AngelMultiplier     float64 `json:"angelMultiplier"`
 		KeyCombo            float64 `json:"keyCombo"`
 		KeychainCombo       float64 `json:"keychainCombo"`
 		TotalSubpoolPoints  float64 `json:"totalSubpoolPoints"`
 	}{
 		LuckAndLuckBoostSum: math.Round(luckAndLuckBoostSum*100) / 100,
+		AngelMultiplier:     angelMultiplier,
 		KeyCombo:            keyCombo,
 		KeychainCombo:       keychainCombo,
 		TotalSubpoolPoints:  subpoolPoints,
@@ -266,11 +272,14 @@ func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainId, su
 	// call `CalculateKeyCombo`
 	keyCombo := CalculateKeyCombo(keys)
 
+	// call `CalculateAngelMultiplier`
+	angelMultiplier := CalculateAngelMultiplier(keys)
+
 	// call `CalculateKeychainCombo`
 	keychainCombo := CalculateKeychainCombo(keychainId, superiorKeychainId)
 
 	// call `BaseSubpoolPoints`
-	return BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainCombo)
+	return BaseSubpoolPoints(luckAndLuckBoostSum, angelMultiplier, keyCombo, keychainCombo)
 }
 
 /*
@@ -325,8 +334,8 @@ Base subpool points generated formula for the user's subpool based on the given 
 	`keyCombo` the key combo bonus
 	`keychainBonus` the keychain bonus of the key
 */
-func BaseSubpoolPoints(luckAndLuckBoostSum, keyCombo, keychainBonus float64) float64 {
-	return math.Round((100+math.Pow(luckAndLuckBoostSum, 0.85)+keyCombo)*keychainBonus*100) / 100
+func BaseSubpoolPoints(luckAndLuckBoostSum, angelMultiplier, keyCombo, keychainBonus float64) float64 {
+	return math.Round((100+math.Pow(luckAndLuckBoostSum, angelMultiplier)+keyCombo)*keychainBonus*100) / 100
 }
 
 /*
@@ -345,6 +354,24 @@ func CalculateKeyCombo(keys []*models.KOSSimplifiedMetadata) float64 {
 
 	// call `BaseKeyCombo` with the key count, houses and types
 	return BaseKeyCombo(len(keys), houses, types)
+}
+
+/*
+Gets the amount of angel keys present in `keys` and calculates the multiplier.
+*/
+func CalculateAngelMultiplier(keys []*models.KOSSimplifiedMetadata) float64 {
+	angelCount := 0
+	for _, key := range keys {
+		if key.LuckTrait == 100 {
+			angelCount++
+		}
+	}
+
+	if angelCount == 0 {
+		return 0.85
+	} else {
+		return 0.85 + (0.07 * float64(angelCount))
+	}
 }
 
 /*
@@ -404,43 +431,43 @@ func BaseKeyCombo(keyCount int, houses, types []string) float64 {
 
 	if keyCount == 2 {
 		if sameHouse && sameType {
-			return 25
+			return 80
 		} else if !sameHouse && sameType {
-			return 17
+			return 95
 		} else if sameHouse && !sameType {
-			return 13
+			return 110
 		} else {
-			return 10
+			return 140
 		}
 	} else if keyCount == 3 {
 		if sameHouse && sameType {
-			return 55
+			return 175
 		} else if !sameHouse && sameType {
-			return 40
+			return 200
 		} else if sameHouse && !sameType {
-			return 30
+			return 240
 		} else {
-			return 25
+			return 300
 		}
 	} else if keyCount == 5 {
 		if sameHouse && sameType {
-			return 150
+			return 360
 		} else if !sameHouse && sameType {
-			return 110
+			return 410
 		} else if sameHouse && !sameType {
-			return 90
+			return 485
 		} else {
-			return 75
+			return 600
 		}
 	} else if keyCount == 15 {
 		if sameHouse && sameType {
-			return 1000
+			return 1250
 		} else if !sameHouse && sameType {
-			return 600
+			return 1500
 		} else if sameHouse && !sameType {
-			return 400
+			return 2000
 		} else {
-			return 300
+			return 350
 		}
 	} else {
 		return 0 // if the key count is neither 1, 2, 3, 5 nor 15, then it is invalid. however, since this error is already being acknowledged in the main function, we just return 0.
