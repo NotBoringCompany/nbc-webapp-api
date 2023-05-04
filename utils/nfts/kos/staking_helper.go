@@ -928,10 +928,10 @@ func UpdateTotalYieldPoints(collection *mongo.Collection) error {
 	for _, stakingPool := range stakingPools {
 		var totalYieldPoints float64
 		for _, subpool := range stakingPool.ActiveSubpools {
-			totalYieldPoints += subpool.SubpoolPoints
+			totalYieldPoints += math.Round(subpool.SubpoolPoints*100) / 100
 		}
 		for _, subpool := range stakingPool.ClosedSubpools {
-			totalYieldPoints += subpool.SubpoolPoints
+			totalYieldPoints += math.Round(subpool.SubpoolPoints*100) / 100
 		}
 
 		// update the total yield points for this staking pool
