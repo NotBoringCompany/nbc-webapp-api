@@ -324,7 +324,7 @@ func CalculateStakerTotalSubpoolPoints(collection *mongo.Collection, stakingPool
 		totalSubpoolPoints += subpool.SubpoolPoints
 	}
 
-	return totalSubpoolPoints, nil
+	return math.Round(totalSubpoolPoints*100) / 100, nil
 }
 
 /*
