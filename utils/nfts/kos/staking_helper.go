@@ -1312,8 +1312,10 @@ func AddSubpool(
 		return err
 	}
 	if !subpoolComboEligiblity {
+		fmt.Println("subpool combo not eligible!")
 		return errors.New("you have already staked this combination of keys more times than allowed for this staking pool")
 	}
+	fmt.Println("subpool combo is eligible.")
 
 	// checks if keychain is already staked in this staking pool (assuming id is not -1 or 0)
 	if keychainId != -1 && keychainId != 0 {
