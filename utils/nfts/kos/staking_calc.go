@@ -3,6 +3,7 @@ package utils_kos
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"nbc-backend-api-v2/configs"
@@ -374,6 +375,8 @@ func CalculateAngelMultiplier(keys []*models.KOSSimplifiedMetadata) float64 {
 	} else {
 		angelMultiplier = 0.85 + (0.07 * float64(angelCount))
 	}
+
+	fmt.Println(angelMultiplier)
 
 	return math.Round(angelMultiplier*100) / 100
 }
