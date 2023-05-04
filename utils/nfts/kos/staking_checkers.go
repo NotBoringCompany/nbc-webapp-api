@@ -228,6 +228,92 @@ func CheckKeysToStakeEligibility(keys []*models.KOSSimplifiedMetadata, keychainI
 }
 
 /*
+A user is allowed to (at the moment) create a limited amount of subpools per staking pool.
+For Flush combos (15 keys), they are allowed to create an unlimited amount of subpools.
+For Pentuple (5), they are only allowed to create 5.
+For Single, Duo and Trio combos (1, 2, 3), they are only allowed to create 3 each.
+*/
+func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId int, stakerWallet string, keys []*models.KOSSimplifiedMetadata) (bool, error) {
+	if collection.Name() != "RHStakingPool" {
+		return false, errors.New("invalid collection name") // defaults to false if an error occurs
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	var stakingPool models.StakingPool
+	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return false, err
+	}
+
+	// fetch the staker's object ID
+	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
+	if err != nil {
+		return false, err
+	}
+
+	var stakersSubpools []*models.StakingSubpool
+
+	// fetch the active subpools only (we don't check for closed subpools here since subpool creations are automatically only allowed during the `EntryAllowance` period)
+	// in this case, any closed subpools are treated as if they don't exist at the first place.
+	for _, subpool := range stakingPool.ActiveSubpools {
+		// find all subpools that the staker has created
+		if subpool.Staker.Hex() == stakerObjId.Hex() {
+			stakersSubpools = append(stakersSubpools, subpool)
+		}
+	}
+
+	// the amount of each of these subpools that the staker has created for `stakingPoolId`.
+	// note that flush doesn't count here since it is unlimited.
+	var singleCombo, duoCombo, trioCombo, pentupleCombo int
+
+	for _, subpool := range stakersSubpools {
+		switch len(subpool.StakedKeys) {
+		case 1:
+			singleCombo++
+		case 2:
+			duoCombo++
+		case 3:
+			trioCombo++
+		case 5:
+			pentupleCombo++
+		}
+	}
+
+	// get the length of the `keys`
+	keysLength := len(keys)
+
+	if keysLength == 15 {
+		return true, nil // return true
+	} else if keysLength == 5 {
+		if pentupleCombo >= 5 {
+			return false, nil // return false
+		} else {
+			return true, nil // return true
+		}
+	} else if keysLength == 3 {
+		if trioCombo >= 3 {
+			return false, nil // return false
+		} else {
+			return true, nil // return true
+		}
+	} else if keysLength == 2 {
+		if duoCombo >= 3 {
+			return false, nil // return false
+		} else {
+			return true, nil // return true
+		}
+	} else if keysLength == 1 {
+		if singleCombo >= 3 {
+			return false, nil // return false
+		} else {
+			return true, nil // return true
+		}
+	} else {
+		return false, errors.New("invalid keys length")
+	}
+}
+
+/*
 Checks if ANY of the keys that a user wants to add to a subpool has already been staked in that particular staking pool.
 If even just one key has already been staked, then the entire batch of keys will be rejected.
 */

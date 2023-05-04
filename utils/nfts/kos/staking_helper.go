@@ -1306,6 +1306,15 @@ func AddSubpool(
 		return err
 	}
 
+	// calls `CheckSubpoolComboEligibility` to check how many times a user has staked X amount of keys
+	subpoolComboEligiblity, err := CheckSubpoolComboEligibility(collection, stakingPoolId, stakerWallet, keys)
+	if err != nil {
+		return err
+	}
+	if !subpoolComboEligiblity {
+		return errors.New("you have already staked this combination of keys more times than allowed for this staking pool")
+	}
+
 	// checks if keychain is already staked in this staking pool (assuming id is not -1 or 0)
 	if keychainId != -1 && keychainId != 0 {
 		staked, err := CheckIfKeychainStaked(collection, stakingPoolId, keychainId)
