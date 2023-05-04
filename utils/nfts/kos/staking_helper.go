@@ -928,14 +928,14 @@ func UpdateTotalYieldPoints(collection *mongo.Collection) error {
 	for _, stakingPool := range stakingPools {
 		var totalYieldPoints float64
 		for _, subpool := range stakingPool.ActiveSubpools {
-			totalYieldPoints += math.Round(subpool.SubpoolPoints*100) / 100
+			totalYieldPoints += subpool.SubpoolPoints
 		}
 		for _, subpool := range stakingPool.ClosedSubpools {
-			totalYieldPoints += math.Round(subpool.SubpoolPoints*100) / 100
+			totalYieldPoints += subpool.SubpoolPoints
 		}
 
 		// update the total yield points for this staking pool
-		_, err := collection.UpdateOne(context.Background(), bson.D{{"stakingPoolID", stakingPool.StakingPoolID}}, bson.D{{"$set", bson.D{{"totalYieldPoints", totalYieldPoints}}}})
+		_, err := collection.UpdateOne(context.Background(), bson.D{{"stakingPoolID", stakingPool.StakingPoolID}}, bson.D{{"$set", bson.D{{"totalYieldPoints", math.Round(totalYieldPoints*100) / 100}}}})
 		if err != nil {
 			return err
 		}
