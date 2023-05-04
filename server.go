@@ -34,6 +34,7 @@ func main() {
 	ApiKOS.CloseSubpoolsOnStakeEndScheduler().Start()
 	ApiKOS.VerifyStakerOwnershipScheduler().Start()
 	ApiKOS.VerifyStakingPoolStakerCountScheduler().Start()
+	ApiKOS.RemoveExpiredUnclaimableSubpoolsScheduler().Start()
 
 	app.Listen(":" + port)
 }

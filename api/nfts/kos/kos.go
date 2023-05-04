@@ -441,6 +441,23 @@ func VerifyStakingPoolStakerCountScheduler() *cron.Cron {
 	return scheduler
 }
 
+/*
+Adds a scheduler to `RemoveExpiredUnclaimableSubpools` to run it every minute.
+*/
+func RemoveExpiredUnclaimableSubpoolsScheduler() *cron.Cron {
+	scheduler := cron.New()
+
+	// run every minute
+	scheduler.AddFunc("*/1 * * * *", func() {
+		err := UtilsKOS.RemoveExpiredUnclaimableSubpools(configs.GetCollections(configs.DB, "RHStakingPool"))
+		if err != nil {
+			panic(err)
+		}
+	})
+
+	return scheduler
+}
+
 /*********************
 
 END OF CRON SCHEDULER FUNCTIONS

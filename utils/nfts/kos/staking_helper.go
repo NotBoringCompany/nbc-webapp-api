@@ -900,6 +900,53 @@ func GetAllStakingPools(collection *mongo.Collection) ([]*models.StakingPool, er
 }
 
 /*
+Removes expired unclaimable subpools (48 hours after the staking pool of the subpool's end time).
+*/
+func RemoveExpiredUnclaimableSubpools(collection *mongo.Collection) error {
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	currentTime := time.Now()
+	// find all staking pools that are 2 days or older (for the end time)
+	filter := bson.M{"endTime": bson.M{"$lte": currentTime.Add(-2 * 24 * time.Hour)}}
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		if err := cursor.Decode(&stakingPool); err != nil {
+			return err
+		}
+
+		// loop through all closedSubpools
+		for _, subpool := range stakingPool.ClosedSubpools {
+			// change rewardclaimable to false for each subpool
+			subpool.RewardClaimable = false
+
+			_, err := collection.UpdateOne(
+				context.Background(),
+				bson.M{"_id": stakingPool.ID, "closedSubpools.subpoolID": subpool.SubpoolID},
+				bson.M{"$set": bson.M{"closedSubpools.$.rewardClaimable": false}},
+			)
+			if err != nil {
+				return err
+			}
+
+			log.Printf("Removed claimable for subpool %d in staking pool %d\n", subpool.SubpoolID, stakingPool.StakingPoolID)
+		}
+	}
+	if err := cursor.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*
 Updates the `TotalYieldPoints` field across all staking pools.
 */
 func UpdateTotalYieldPoints(collection *mongo.Collection) error {
