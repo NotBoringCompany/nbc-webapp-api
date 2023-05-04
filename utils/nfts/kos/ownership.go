@@ -10,7 +10,7 @@ import (
 /*
 Calls `GetExplicitOwnerships` for the Key Of Salvation contract.
 */
-func kosExplicitOwnership() ([]models.ExplicitOwnership, error) {
+func KOSExplicitOwnership() ([]models.ExplicitOwnership, error) {
 	// calls `GetExplicitOwnerships` for the Key Of Salvation with the given address
 	ownerships, err := UtilsNFT.GetExplicitOwnerships(
 		"ALCHEMY_ETH_API_KEY",
