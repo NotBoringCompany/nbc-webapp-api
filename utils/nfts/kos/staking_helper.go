@@ -925,18 +925,18 @@ func RemoveExpiredUnclaimableSubpools(collection *mongo.Collection) error {
 		// loop through all closedSubpools
 		for _, subpool := range stakingPool.ClosedSubpools {
 			// change rewardclaimable to false for each subpool
-			subpool.RewardClaimable = false
+			if subpool.RewardClaimable {
+				_, err := collection.UpdateOne(
+					context.Background(),
+					bson.M{"_id": stakingPool.ID, "closedSubpools.subpoolID": subpool.SubpoolID},
+					bson.M{"$set": bson.M{"closedSubpools.$.rewardClaimable": false}},
+				)
+				if err != nil {
+					return err
+				}
 
-			_, err := collection.UpdateOne(
-				context.Background(),
-				bson.M{"_id": stakingPool.ID, "closedSubpools.subpoolID": subpool.SubpoolID},
-				bson.M{"$set": bson.M{"closedSubpools.$.rewardClaimable": false}},
-			)
-			if err != nil {
-				return err
+				log.Printf("Removed claimable for subpool %d in staking pool %d\n", subpool.SubpoolID, stakingPool.StakingPoolID)
 			}
-
-			log.Printf("Removed claimable for subpool %d in staking pool %d\n", subpool.SubpoolID, stakingPool.StakingPoolID)
 		}
 	}
 	if err := cursor.Err(); err != nil {
