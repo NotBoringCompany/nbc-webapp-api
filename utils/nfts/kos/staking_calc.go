@@ -367,11 +367,15 @@ func CalculateAngelMultiplier(keys []*models.KOSSimplifiedMetadata) float64 {
 		}
 	}
 
+	var angelMultiplier float64
+
 	if angelCount == 0 {
-		return 0.85
+		angelMultiplier = 0.85
 	} else {
-		return math.Round(0.85+(0.07*float64(angelCount))*100) / 100
+		angelMultiplier = 0.85 + (0.07 * float64(angelCount))
 	}
+
+	return math.Round(angelMultiplier*100) / 100
 }
 
 /*
