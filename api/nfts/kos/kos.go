@@ -267,6 +267,7 @@ func CalculateSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) fl
 
 func BacktrackSubpoolPoints(stakingPoolId, subpoolId int) (*struct {
 	LuckAndLuckBoostSum float64 `json:"luckAndLuckBoostSum"`
+	AngelMultiplier     float64 `json:"angelMultiplier"`
 	KeyCombo            float64 `json:"keyCombo"`
 	KeychainCombo       float64 `json:"keychainCombo"`
 	TotalSubpoolPoints  float64 `json:"totalSubpoolPoints"`
