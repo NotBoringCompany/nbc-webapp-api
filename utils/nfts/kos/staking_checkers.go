@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	UtilsKeychain "nbc-backend-api-v2/utils/nfts/keychain"
@@ -123,6 +124,51 @@ func VerifyStakerOwnership(collection *mongo.Collection) error {
 		}
 
 		log.Printf("verifying complete. staker still owns all staked items for subpool %d of staking pool %d", subpool.SubpoolID, subpool.StakingPoolID)
+	}
+
+	return nil
+}
+
+/*
+Checks all relevant staking pools that are about to start. if they have less than 20 stakers, they will be cancelled.
+*/
+func CheckStakingPoolStakerCount(collection *mongo.Collection) error {
+	if collection.Name() != "RHStakingPool" {
+		return errors.New("collection must be RHStakingPool")
+	}
+
+	cursor, err := collection.Find(context.Background(), bson.M{})
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var stakingPool models.StakingPool
+		err := cursor.Decode(&stakingPool)
+		if err != nil {
+			return err
+		}
+
+		// check if the staking pool has started
+		if time.Now().After(stakingPool.StartTime) {
+			// collect all unique stakers from the subpools
+			uniqueStakers := make(map[primitive.ObjectID]bool)
+			for _, subpool := range stakingPool.ActiveSubpools {
+				uniqueStakers[*subpool.Staker] = true
+			}
+
+			if len(uniqueStakers) < 20 {
+				// cancel the staking pool
+				_, err := collection.DeleteOne(context.Background(), bson.M{"_id": stakingPool.ID})
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	if err := cursor.Err(); err != nil {
+		return err
 	}
 
 	return nil

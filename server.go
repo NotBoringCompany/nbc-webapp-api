@@ -33,6 +33,7 @@ func main() {
 	ApiKOS.UpdateTotalYieldPointsScheduler().Start()
 	ApiKOS.CloseSubpoolsOnStakeEndScheduler().Start()
 	ApiKOS.VerifyStakerOwnershipScheduler().Start()
+	ApiKOS.VerifyStakingPoolStakerCountScheduler().Start()
 
 	app.Listen(":" + port)
 }

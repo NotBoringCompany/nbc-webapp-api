@@ -424,6 +424,23 @@ func VerifyStakerOwnershipScheduler() *cron.Cron {
 	return scheduler
 }
 
+/*
+Adds a scheduler to `VerifyStakingPoolStakerCount` to run it every minute.
+*/
+func VerifyStakingPoolStakerCountScheduler() *cron.Cron {
+	scheduler := cron.New()
+
+	// runs every minute
+	scheduler.AddFunc("*/1 * * * *", func() {
+		err := UtilsKOS.CheckStakingPoolStakerCount(configs.GetCollections(configs.DB, "RHStakingPool"))
+		if err != nil {
+			panic(err)
+		}
+	})
+
+	return scheduler
+}
+
 /*********************
 
 END OF CRON SCHEDULER FUNCTIONS
