@@ -299,6 +299,44 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	// CheckSubpoolComboEligibility route
+	app.Get("/kos/check-subpool-combo-eligiblity/:stakerWallet/:stakingPoolId/:keyCount", func(c *fiber.Ctx) error {
+		stakerWallet := c.Params("stakerWallet")
+		stakingPoolId := c.Params("stakingPoolId")
+		keyCount := c.Params("keyCount")
+		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given stakingPoolId to int.",
+				Data:    nil,
+			})
+		}
+		keyCountInt, err := strconv.Atoi(keyCount)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: "unable to successfully convert given keyCount to int.",
+				Data:    nil,
+			})
+		}
+
+		res, err := ApiKOS.CheckSubpoolComboEligibility(stakingPoolIdInt, keyCountInt, stakerWallet)
+		if err != nil {
+			return c.JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully check subpool combo eligibility for given stakerWallet, stakingPoolId, and keyCount: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully checked subpool combo eligibility for given stakerWallet, stakingPoolId, and keyCount.",
+			Data:    &fiber.Map{"isEligible": res},
+		})
+	})
+
 	// GetStakingPoolData route
 	app.Get("/kos/staking-pool-data/:stakingPoolId", func(c *fiber.Ctx) error {
 		id := c.Params("stakingPoolId")

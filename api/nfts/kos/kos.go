@@ -259,6 +259,10 @@ func GetStakingPoolData(stakingPoolId int) (*models.StakingPool, error) {
 	return UtilsKOS.GetStakingPoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId)
 }
 
+func CheckSubpoolComboEligibility(stakingPoolId, keyCount int, stakerWallet string) (bool, error) {
+	return UtilsKOS.CheckSubpoolComboEligibilityAlt(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet, keyCount)
+}
+
 func CalculateSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) float64 {
 	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
 
