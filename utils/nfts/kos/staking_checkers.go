@@ -151,7 +151,7 @@ func CheckStakingPoolStakerCount(collection *mongo.Collection) error {
 		}
 
 		// check if the staking pool has started
-		if time.Now().After(stakingPool.StartTime) {
+		if time.Now().After(stakingPool.StartTime) && time.Now().Before(stakingPool.EndTime) {
 			// collect all unique stakers from the subpools
 			uniqueStakers := make(map[primitive.ObjectID]bool)
 			for _, subpool := range stakingPool.ActiveSubpools {
