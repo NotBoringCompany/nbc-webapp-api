@@ -394,14 +394,13 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
-	log.Printf("staker object ID: %v", stakerObjId)
 	if err != nil {
 		return false, err
 	}
-	log.Printf("staker object ID is nil: %v", stakerObjId == nil)
+	fmt.Println(stakerObjId)
 	// if staker object doesn't exist, we create a new staker instance.
 	if stakerObjId == nil {
-		log.Printf("staker not found while checking combo. creating new staker instance...")
+		fmt.Println("staker not found while checking combo. creating new staker instance...")
 		newStaker := &models.Staker{
 			Wallet: stakerWallet,
 		}
@@ -411,13 +410,13 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 			return false, err
 		}
 
-		log.Printf("staker not found while checking combo. created new staker instance: %v", newStaker)
 		stakerObjId = addStaker.InsertedID.(*primitive.ObjectID)
+		fmt.Println("created new staker instance: ", newStaker)
 	}
 
 	filter := bson.M{"stakingPoolID": stakingPoolId}
 	var stakingPool models.StakingPool
-	log.Printf("staking pool object ID: %v", stakingPool.ID.Hex())
+	fmt.Println("staking Pool ID: ", stakingPoolId)
 	err = collection.FindOne(context.Background(), filter).Decode(&stakingPool)
 	if err != nil {
 		return false, err
@@ -428,7 +427,7 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 	// fetch the active subpools only (we don't check for closed subpools here since subpool creations are automatically only allowed during the `EntryAllowance` period)
 	// in this case, any closed subpools are treated as if they don't exist at the first place.
 	for _, subpool := range stakingPool.ActiveSubpools {
-		log.Printf("staker objId when checking subpool: %v", stakerObjId.Hex())
+		fmt.Println("staker objId when checking subpool: ", stakerObjId.Hex())
 		// find all subpools that the staker has created
 		if subpool.Staker.Hex() == stakerObjId.Hex() {
 			stakersSubpools = append(stakersSubpools, subpool)
