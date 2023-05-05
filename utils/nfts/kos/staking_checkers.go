@@ -3,6 +3,7 @@ package utils_kos
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
@@ -286,7 +287,10 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 		return false, errors.New("invalid collection name") // defaults to false if an error occurs
 	}
 
-	log.Printf("collection name: %v", collection.Name())
+	fmt.Println(collection.Name())
+	fmt.Println(stakingPoolId)
+	fmt.Println(stakerWallet)
+	fmt.Println(keys)
 
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
@@ -387,6 +391,11 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 	if collection.Name() != "RHStakingPool" {
 		return false, errors.New("invalid collection name") // defaults to false if an error occurs
 	}
+
+	fmt.Println(collection.Name())
+	fmt.Println(stakingPoolId)
+	fmt.Println(stakerWallet)
+	fmt.Println(keys)
 
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
