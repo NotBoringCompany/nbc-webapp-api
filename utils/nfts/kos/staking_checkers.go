@@ -546,6 +546,7 @@ func CheckIfKeychainStaked(collection *mongo.Collection, stakingPoolId, keychain
 	// check if the keychain ID is in the list of staked keychain IDs
 	for _, stakedKeychainID := range stakedKeychainIDs {
 		if stakedKeychainID == keychainId {
+			fmt.Println("keychain ", keychainId, "already staked in staking pool ", stakingPoolId)
 			return true, nil
 		}
 	}
