@@ -1198,6 +1198,7 @@ func GetAllStakedKeychainIDs(collection *mongo.Collection, stakingPoolId int) ([
 		}
 	}
 
+	fmt.Println("staked keychain IDs: ", stakedKeychainIDs)
 	return stakedKeychainIDs, nil
 }
 
