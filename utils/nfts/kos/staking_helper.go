@@ -1184,39 +1184,21 @@ func GetAllStakedKeychainIDs(collection *mongo.Collection, stakingPoolId int) ([
 		return nil, errors.New("invalid collection name")
 	}
 
-	pipeline := mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"stakingPoolID", stakingPoolId}}}},                                       // match documents with stakingPoolID equal to 1
-		bson.D{{"$unwind", "$activeSubpools"}},                                                             // unwind the activeSubpools array to get separate document for each subpool
-		bson.D{{"$match", bson.D{{"activeSubpools.stakedKeychainId", bson.D{{"$ne", -1}}}}}},               // exclude subpools with stakedKeychainId equal to -1
-		bson.D{{"$project", bson.D{{"_id", 0}, {"stakedKeychainId", "$activeSubpools.stakedKeychainId"}}}}, // project only the stakedKeychainId
-	}
-
-	cursor, err := collection.Aggregate(context.Background(), pipeline)
-	if err != nil {
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	var stakingPool *models.StakingPool
+	if err := collection.FindOne(context.Background(), filter).Decode(&stakingPool); err != nil {
 		return nil, err
 	}
 
-	defer cursor.Close(context.Background())
+	var stakedKeychainIDs []int
 
-	var keychainIDs []int
-	for cursor.Next(context.Background()) {
-		var result struct {
-			StakedKeychainID int `bson:"stakedKeychainId"`
+	for _, subpool := range stakingPool.ActiveSubpools {
+		for _, stakedKeychainId := range subpool.StakedKeychainIDs {
+			stakedKeychainIDs = append(stakedKeychainIDs, stakedKeychainId)
 		}
-		if err := cursor.Decode(&result); err != nil {
-			return nil, err
-		}
-
-		keychainIDs = append(keychainIDs, result.StakedKeychainID)
 	}
 
-	if err := cursor.Err(); err != nil {
-		return nil, err
-	}
-
-	defer cursor.Close(context.Background())
-
-	return keychainIDs, nil
+	return stakedKeychainIDs, nil
 }
 
 /*
