@@ -392,11 +392,6 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 		return false, errors.New("invalid collection name") // defaults to false if an error occurs
 	}
 
-	fmt.Println(collection.Name())
-	fmt.Println(stakingPoolId)
-	fmt.Println(stakerWallet)
-	fmt.Println(keyCount)
-
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
 	log.Printf("staker object ID: %v", stakerObjId)
