@@ -320,6 +320,7 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 	// in this case, any closed subpools are treated as if they don't exist at the first place.
 	for _, subpool := range stakingPool.ActiveSubpools {
 		// find all subpools that the staker has created
+		log.Printf("staker objId when checking subpool: %v", stakerObjId.Hex())
 		if subpool.Staker.Hex() == stakerObjId.Hex() {
 			stakersSubpools = append(stakersSubpools, subpool)
 		}
