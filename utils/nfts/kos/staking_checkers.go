@@ -392,14 +392,18 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 		return false, errors.New("invalid collection name") // defaults to false if an error occurs
 	}
 
+	fmt.Println("works here 1")
+
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
 	if err != nil {
 		return false, err
 	}
+	fmt.Println("works here 2")
 	fmt.Println(stakerObjId)
 	// if staker object doesn't exist, we create a new staker instance.
 	if stakerObjId == nil {
+		fmt.Println("works here 3")
 		fmt.Println("staker not found while checking combo. creating new staker instance...")
 		newStaker := &models.Staker{
 			Wallet: stakerWallet,
@@ -409,6 +413,7 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 		if err != nil {
 			return false, err
 		}
+		fmt.Println("works here 4")
 
 		stakerObjId = addStaker.InsertedID.(*primitive.ObjectID)
 		fmt.Println("created new staker instance: ", newStaker)
