@@ -395,8 +395,6 @@ func UpdateStakerBannedData(collection *mongo.Collection, stakerId *primitive.Ob
 		return err
 	}
 
-	fmt.Println("this part works here!")
-
 	// if staker already has a BannedData instance, we first update the LastBanTime to now.
 	if staker.BannedData != nil {
 		// update the LastBanTime to now
@@ -1224,8 +1222,6 @@ func GetAllStakedSuperiorKeychainIDs(collection *mongo.Collection, stakingPoolId
 
 	defer cursor.Close(context.Background())
 
-	fmt.Println(cursor)
-
 	var superiorKeychainIDs []int
 	for cursor.Next(context.Background()) {
 		var result struct {
@@ -1350,10 +1346,8 @@ func AddSubpool(
 		return err
 	}
 	if !subpoolComboEligiblity {
-		fmt.Println("subpool combo not eligible!")
 		return errors.New("you have already staked this combination of keys more times than allowed for this staking pool")
 	}
-	fmt.Println("subpool combo is eligible.")
 
 	// checks if keychains are already staked in this staking pool (assuming id is not -1 or 0)
 	if len(keychainIds) > 0 {

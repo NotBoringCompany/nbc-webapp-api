@@ -323,7 +323,6 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 
 	filter := bson.M{"stakingPoolID": stakingPoolId}
 	var stakingPool models.StakingPool
-	fmt.Println("staking Pool ID: ", stakingPoolId)
 	err = collection.FindOne(context.Background(), filter).Decode(&stakingPool)
 	if err != nil {
 		return false, err
@@ -424,7 +423,6 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 
 	filter := bson.M{"stakingPoolID": stakingPoolId}
 	var stakingPool models.StakingPool
-	fmt.Println("staking Pool ID: ", stakingPoolId)
 	err = collection.FindOne(context.Background(), filter).Decode(&stakingPool)
 	if err != nil {
 		return false, err
@@ -546,7 +544,6 @@ func CheckIfKeychainStaked(collection *mongo.Collection, stakingPoolId, keychain
 	// check if the keychain ID is in the list of staked keychain IDs
 	for _, stakedKeychainID := range stakedKeychainIDs {
 		if stakedKeychainID == keychainId {
-			fmt.Println("keychain ", keychainId, "already staked in staking pool ", stakingPoolId)
 			return true, nil
 		}
 	}
