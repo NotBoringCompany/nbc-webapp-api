@@ -287,17 +287,12 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 		return false, errors.New("invalid collection name") // defaults to false if an error occurs
 	}
 
-	fmt.Println(collection.Name())
-	fmt.Println(stakingPoolId)
-	fmt.Println(stakerWallet)
-	fmt.Println(keys)
-
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
 	if err != nil {
 		return false, err
 	}
-	log.Printf("staker object ID: %v", stakerObjId)
+
 	// if staker object doesn't exist, we create a new staker instance.
 	if stakerObjId == nil {
 		newStaker := &models.Staker{
@@ -309,12 +304,14 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 			return false, err
 		}
 
-		log.Printf("staker not found while checking combo. created new staker instance: %v", newStaker)
-		stakerObjId = addStaker.InsertedID.(*primitive.ObjectID)
+		stakerObjId_ := addStaker.InsertedID.(primitive.ObjectID)
+		stakerObjId = &stakerObjId_
+		fmt.Println("staker not found when checking combo. created new staker instance: ", newStaker)
 	}
 
 	filter := bson.M{"stakingPoolID": stakingPoolId}
 	var stakingPool models.StakingPool
+	fmt.Println("staking Pool ID: ", stakingPoolId)
 	err = collection.FindOne(context.Background(), filter).Decode(&stakingPool)
 	if err != nil {
 		return false, err
@@ -326,7 +323,6 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 	// in this case, any closed subpools are treated as if they don't exist at the first place.
 	for _, subpool := range stakingPool.ActiveSubpools {
 		// find all subpools that the staker has created
-		log.Printf("staker objId when checking subpool: %v", stakerObjId.Hex())
 		if subpool.Staker.Hex() == stakerObjId.Hex() {
 			stakersSubpools = append(stakersSubpools, subpool)
 		}
@@ -392,19 +388,14 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 		return false, errors.New("invalid collection name") // defaults to false if an error occurs
 	}
 
-	fmt.Println("works here 1")
-
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
 	if err != nil {
 		return false, err
 	}
-	fmt.Println("works here 2")
-	fmt.Println(stakerObjId)
+
 	// if staker object doesn't exist, we create a new staker instance.
 	if stakerObjId == nil {
-		fmt.Println("works here 3")
-		fmt.Println("staker not found while checking combo. creating new staker instance...")
 		newStaker := &models.Staker{
 			Wallet: stakerWallet,
 		}
@@ -413,10 +404,10 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 		if err != nil {
 			return false, err
 		}
-		fmt.Println("works here 4")
 
-		stakerObjId = addStaker.InsertedID.(*primitive.ObjectID)
-		fmt.Println("created new staker instance: ", newStaker)
+		stakerObjId_ := addStaker.InsertedID.(primitive.ObjectID)
+		stakerObjId = &stakerObjId_
+		fmt.Println("staker not found when checking combo. created new staker instance: ", newStaker)
 	}
 
 	filter := bson.M{"stakingPoolID": stakingPoolId}
@@ -432,7 +423,6 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 	// fetch the active subpools only (we don't check for closed subpools here since subpool creations are automatically only allowed during the `EntryAllowance` period)
 	// in this case, any closed subpools are treated as if they don't exist at the first place.
 	for _, subpool := range stakingPool.ActiveSubpools {
-		fmt.Println("staker objId when checking subpool: ", stakerObjId.Hex())
 		// find all subpools that the staker has created
 		if subpool.Staker.Hex() == stakerObjId.Hex() {
 			stakersSubpools = append(stakersSubpools, subpool)
@@ -455,8 +445,6 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 			pentupleCombo++
 		}
 	}
-
-	log.Printf("singleCombo: %v, dualCombo: %v, trioCombo: %v, pentupleCombo: %v", singleCombo, duoCombo, trioCombo, pentupleCombo)
 
 	if keyCount == 15 {
 		return true, nil // return true
