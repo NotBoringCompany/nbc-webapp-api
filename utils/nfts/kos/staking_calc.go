@@ -435,43 +435,43 @@ func BaseKeyCombo(keyCount int, houses, types []string) float64 {
 
 	if keyCount == 2 {
 		if sameHouse && sameType {
-			return 80
-		} else if !sameHouse && sameType {
-			return 95
-		} else if sameHouse && !sameType {
-			return 110
-		} else {
 			return 140
+		} else if !sameHouse && sameType {
+			return 110
+		} else if sameHouse && !sameType {
+			return 95
+		} else {
+			return 80
 		}
 	} else if keyCount == 3 {
 		if sameHouse && sameType {
-			return 175
-		} else if !sameHouse && sameType {
-			return 200
-		} else if sameHouse && !sameType {
-			return 240
-		} else {
 			return 300
+		} else if !sameHouse && sameType {
+			return 240
+		} else if sameHouse && !sameType {
+			return 200
+		} else {
+			return 175
 		}
 	} else if keyCount == 5 {
 		if sameHouse && sameType {
-			return 360
-		} else if !sameHouse && sameType {
-			return 410
-		} else if sameHouse && !sameType {
-			return 485
-		} else {
 			return 600
+		} else if !sameHouse && sameType {
+			return 485
+		} else if sameHouse && !sameType {
+			return 410
+		} else {
+			return 360
 		}
 	} else if keyCount == 15 {
 		if sameHouse && sameType {
-			return 1250
+			return 3500
 		} else if !sameHouse && sameType {
-			return 1500
-		} else if sameHouse && !sameType {
 			return 2000
+		} else if sameHouse && !sameType {
+			return 1500
 		} else {
-			return 350
+			return 1250
 		}
 	} else {
 		return 0 // if the key count is neither 1, 2, 3, 5 nor 15, then it is invalid. however, since this error is already being acknowledged in the main function, we just return 0.
