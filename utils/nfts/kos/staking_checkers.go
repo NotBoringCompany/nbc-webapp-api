@@ -3,7 +3,6 @@ package utils_kos
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"nbc-backend-api-v2/configs"
 	"nbc-backend-api-v2/models"
@@ -393,6 +392,7 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 	if err != nil {
 		return false, err
 	}
+	log.Printf("staker object ID is nil: %v", stakerObjId == nil)
 	// if staker object doesn't exist, we create a new staker instance.
 	if stakerObjId == nil {
 		log.Printf("staker not found while checking combo. creating new staker instance...")
@@ -408,8 +408,6 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 		log.Printf("staker not found while checking combo. created new staker instance: %v", newStaker)
 		stakerObjId = addStaker.InsertedID.(*primitive.ObjectID)
 	}
-
-	fmt.Println("works here!")
 
 	filter := bson.M{"stakingPoolID": stakingPoolId}
 	var stakingPool models.StakingPool
