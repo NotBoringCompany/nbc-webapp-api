@@ -419,6 +419,7 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 	// fetch the active subpools only (we don't check for closed subpools here since subpool creations are automatically only allowed during the `EntryAllowance` period)
 	// in this case, any closed subpools are treated as if they don't exist at the first place.
 	for _, subpool := range stakingPool.ActiveSubpools {
+		log.Printf("staker objId when checking subpool: %v", stakerObjId.Hex())
 		// find all subpools that the staker has created
 		if subpool.Staker.Hex() == stakerObjId.Hex() {
 			stakersSubpools = append(stakersSubpools, subpool)
