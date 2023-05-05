@@ -395,7 +395,7 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 	fmt.Println(collection.Name())
 	fmt.Println(stakingPoolId)
 	fmt.Println(stakerWallet)
-	fmt.Println(keys)
+	fmt.Println(keyCount)
 
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
