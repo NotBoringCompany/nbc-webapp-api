@@ -372,6 +372,7 @@ func GetStakerInstance(collection *mongo.Collection, wallet string) (*primitive.
 	}
 
 	if staker.ID == primitive.NilObjectID {
+		fmt.Println("staker ID is nil")
 		return nil, nil
 	} else {
 		return &staker.ID, nil
