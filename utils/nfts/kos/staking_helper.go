@@ -607,10 +607,15 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 		nftData = append(nftData, modified)
 	}
 
-	keychainData := &models.NFTData{
-		Name:     fmt.Sprint("Keychain #", subpoolData.StakedKeychainID),
-		ImageUrl: "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/keychain.mp4",
-		TokenID:  subpoolData.StakedKeychainID,
+	var keychainData []*models.NFTData
+	for _, keychainId := range subpoolData.StakedKeychainIDs {
+		data := &models.NFTData{
+			Name:     fmt.Sprint("Keychain #", keychainId),
+			ImageUrl: "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/keychain.mp4",
+			TokenID:  keychainId,
+		}
+
+		keychainData = append(keychainData, data)
 	}
 
 	superiorKeychainData := &models.NFTData{
@@ -625,7 +630,7 @@ func GetSubpoolDataAPI(collection *mongo.Collection, stakingPoolId, subpoolId in
 		EnterTime:              subpoolData.EnterTime.Unix(),
 		ExitTime:               subpoolData.ExitTime.Unix(),
 		StakedKeys:             nftData,
-		StakedKeychain:         keychainData,
+		StakedKeychains:        keychainData,
 		StakedSuperiorKeychain: superiorKeychainData,
 		SubpoolPoints:          subpoolData.SubpoolPoints,
 		RewardClaimable:        subpoolData.RewardClaimable,
@@ -1305,15 +1310,15 @@ Every time a user stakes, it counts as a new subpool. If a user has 10 keys and 
 	`stakingPoolId` the main staking pool ID (to add the subpool instance into)
 	`stakerWallet` the staker's wallet to check against `RHStakerData`
 	`keys` the key IDs staked
-	`keychain` the keychain ID staked
-	`superiorKeychain` the superior keychain ID staked
+	`keychainIds` the keychain IDs staked (if applicable, otherwise nil)`
+	`superiorKeychainId` the superior keychain ID staked
 */
 func AddSubpool(
 	collection *mongo.Collection,
 	stakingPoolId int,
 	stakerWallet string,
 	keys []*models.KOSSimplifiedMetadata,
-	keychainId int,
+	keychainIds []int,
 	superiorKeychainId int,
 ) error {
 	// collection must be RHStakingPool.
@@ -1351,7 +1356,7 @@ func AddSubpool(
 
 	// calls `CheckKeysToStakeEligibility` to check for amount of keys to stake, keychain, and superior keychain eligibility.
 	// if any of the checks fail, return an error.
-	err = CheckKeysToStakeEligibility(keys, keychainId, superiorKeychainId)
+	err = CheckKeysToStakeEligibility(keys, keychainIds, superiorKeychainId)
 	if err != nil {
 		return err
 	}
@@ -1367,14 +1372,18 @@ func AddSubpool(
 	}
 	fmt.Println("subpool combo is eligible.")
 
-	// checks if keychain is already staked in this staking pool (assuming id is not -1 or 0)
-	if keychainId != -1 && keychainId != 0 {
-		staked, err := CheckIfKeychainStaked(collection, stakingPoolId, keychainId)
-		if err != nil {
-			return err
-		}
-		if staked {
-			return errors.New("keychain has already been staked in another subpool for this staking pool")
+	// checks if keychains are already staked in this staking pool (assuming id is not -1 or 0)
+	if len(keychainIds) > 0 {
+		for _, keychainId := range keychainIds {
+			if keychainId != 1 && keychainId != 0 {
+				staked, err := CheckIfKeychainStaked(collection, stakingPoolId, keychainId)
+				if err != nil {
+					return err
+				}
+				if staked {
+					return errors.New("keychain has already been staked in another subpool for this staking pool")
+				}
+			}
 		}
 	}
 
@@ -1425,14 +1434,14 @@ func AddSubpool(
 	}
 
 	// call `CalculateSubpoolPoints`
-	subpoolPoints := CalculateSubpoolPoints(keys, keychainId, superiorKeychainId)
+	subpoolPoints := CalculateSubpoolPoints(keys, keychainIds, superiorKeychainId)
 
 	subpool := &models.StakingSubpool{
 		SubpoolID:                nextSubpoolId,
 		Staker:                   stakerObjId,
 		EnterTime:                time.Now(),
 		StakedKeys:               keys,
-		StakedKeychainID:         keychainId,
+		StakedKeychainIDs:        keychainIds,
 		StakedSuperiorKeychainID: superiorKeychainId,
 		SubpoolPoints:            math.Round(subpoolPoints*100) / 100, // 2 decimal places
 		RewardClaimable:          false,

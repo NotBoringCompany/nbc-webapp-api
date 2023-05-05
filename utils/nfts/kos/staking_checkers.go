@@ -74,8 +74,8 @@ func VerifyStakerOwnership(collection *mongo.Collection) error {
 
 		// check whether the staker still owns the keychain
 		// if a keychain is staked, the keychain id is not -1 or 0.
-		if subpool.StakedKeychainID != -1 && subpool.StakedKeychainID != 0 {
-			stillOwned, err := UtilsKeychain.VerifyOwnership(stakerData.Wallet, []int{subpool.StakedKeychainID})
+		if len(subpool.StakedKeychainIDs) > 0 {
+			stillOwned, err := UtilsKeychain.VerifyOwnership(stakerData.Wallet, subpool.StakedKeychainIDs)
 			if err != nil {
 				return err
 			}
@@ -236,7 +236,7 @@ func CheckPoolTimeAllowanceExceeded(collection *mongo.Collection, stakingPoolId 
 /*
 Multiple checks to ensure the eligibility of a user to add a subpool with regards to the keys and keychain/superior keychain to stake.
 */
-func CheckKeysToStakeEligibility(keys []*models.KOSSimplifiedMetadata, keychainId, superiorKeychainId int) error {
+func CheckKeysToStakeEligibility(keys []*models.KOSSimplifiedMetadata, keychainIds []int, superiorKeychainId int) error {
 	// ensures that there is at least 1 key to stake.
 	if len(keys) == 0 || keys == nil {
 		return errors.New("must stake at least 1 key")
@@ -252,21 +252,33 @@ func CheckKeysToStakeEligibility(keys []*models.KOSSimplifiedMetadata, keychainI
 	// if a user stakes 15 keys, they are ONLY allowed to use a superior keychain.
 	// NOTE: each subpool is allowed to only have 1 keychain or 1 superior keychain regardless.
 	if len(keys) == 15 {
-		if keychainId != -1 {
-			return errors.New("cannot use keychain when staking 15 keys. please use a superior keychain instead or open multiple subpools")
+		// if there isn't either 0 or 3 keychain IDs, then there is an error.
+		if len(keychainIds) != 0 && len(keychainIds) != 3 {
+			return errors.New("invalid number of keychain IDs")
 		}
-		if keychainId == 0 {
-			return errors.New("invalid keychain ID")
+		for _, keychainId := range keychainIds {
+			if keychainId == 0 {
+				return errors.New("invalid keychain ID")
+			}
 		}
+		// if keychainId != -1 {
+		// 	return errors.New("cannot use keychain when staking 15 keys. please use a superior keychain instead or open multiple subpools")
+		// }
+
 		if superiorKeychainId == 0 {
 			return errors.New("invalid superior keychain ID")
 		}
 	} else {
-		if keychainId != -1 && superiorKeychainId != -1 {
+		if len(keychainIds) > 1 {
+			return errors.New("cannot stake more than 1 keychain in non-flush combo subpools.")
+		}
+		if len(keychainIds) != 0 && superiorKeychainId != -1 {
 			return errors.New("cannot stake both keychain and superior keychain in one subpool. please use either a keychain or a superior keychain")
 		}
-		if keychainId == 0 {
-			return errors.New("invalid keychain ID")
+		for _, keychainId := range keychainIds {
+			if keychainId == 0 {
+				return errors.New("invalid keychain ID")
+			}
 		}
 		if superiorKeychainId == 0 {
 			return errors.New("invalid superior keychain ID")

@@ -21,8 +21,8 @@ Only for token based reward pools.
 func GetTokenPreAddSubpoolData(
 	collection *mongo.Collection,
 	stakingPoolId int,
-	keyIds []int,
-	keychainId,
+	keyIds,
+	keychainIds []int,
 	superiorKeychainId int,
 ) (*models.DetailedTokenSubpoolPreAddCalc, error) {
 	if collection.Name() != "RHStakingPool" {
@@ -59,12 +59,12 @@ func GetTokenPreAddSubpoolData(
 	}()
 
 	go func() {
-		keychainCombo := CalculateKeychainCombo(keychainId, superiorKeychainId)
+		keychainCombo := CalculateKeychainCombo(keychainIds, superiorKeychainId)
 		keychainComboCh <- keychainCombo
 	}()
 
 	go func() {
-		subpoolPoints := CalculateSubpoolPoints(keyMetadata, keychainId, superiorKeychainId)
+		subpoolPoints := CalculateSubpoolPoints(keyMetadata, keychainIds, superiorKeychainId)
 		subpoolPointsCh <- subpoolPoints
 	}()
 
@@ -148,9 +148,9 @@ func BacktrackSubpoolPoints(collection *mongo.Collection, stakingPoolId, subpool
 	// get the keycombo
 	keyCombo := CalculateKeyCombo(subpoolData.StakedKeys)
 	// get the keychain combo
-	keychainCombo := CalculateKeychainCombo(subpoolData.StakedKeychainID, subpoolData.StakedSuperiorKeychainID)
+	keychainCombo := CalculateKeychainCombo(subpoolData.StakedKeychainIDs, subpoolData.StakedSuperiorKeychainID)
 	// get the total subpool points
-	subpoolPoints := CalculateSubpoolPoints(subpoolData.StakedKeys, subpoolData.StakedKeychainID, subpoolData.StakedSuperiorKeychainID)
+	subpoolPoints := CalculateSubpoolPoints(subpoolData.StakedKeys, subpoolData.StakedKeychainIDs, subpoolData.StakedSuperiorKeychainID)
 
 	// check if subpool points matches the one from `subpoolData`
 	if subpoolPoints != subpoolData.SubpoolPoints {
@@ -262,7 +262,7 @@ Calculates the subpool points generated for the user's subpool based on the keys
 	`keychain` is the keychain staked
 	`superiorKeychain` is the superior keychain staked
 */
-func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainId, superiorKeychainId int) float64 {
+func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainIds []int, superiorKeychainId int) float64 {
 	// for each key, calculate the sum of (luck * luckBoost)
 	luckAndLuckBoostSum := 0.0
 	for _, key := range keys {
@@ -276,7 +276,7 @@ func CalculateSubpoolPoints(keys []*models.KOSSimplifiedMetadata, keychainId, su
 	angelMultiplier := CalculateAngelMultiplier(keys)
 
 	// call `CalculateKeychainCombo`
-	keychainCombo := CalculateKeychainCombo(keychainId, superiorKeychainId)
+	keychainCombo := CalculateKeychainCombo(keychainIds, superiorKeychainId)
 
 	// call `BaseSubpoolPoints`
 	return BaseSubpoolPoints(luckAndLuckBoostSum, angelMultiplier, keyCombo, keychainCombo)
@@ -481,11 +481,11 @@ func BaseKeyCombo(keyCount int, houses, types []string) float64 {
 /*
 Calculates the keychain bonus for a subpool.
 */
-func CalculateKeychainCombo(keychainId, superiorKeychainId int) float64 {
+func CalculateKeychainCombo(keychainIds []int, superiorKeychainId int) float64 {
 	var keychainBonus float64 = 1
-	if keychainId != -1 && superiorKeychainId == -1 {
-		keychainBonus = 1.1 // if the user stakes a keychain, bonus is 1.1
-	} else if keychainId == -1 && superiorKeychainId != -1 {
+	if len(keychainIds) >= 1 && superiorKeychainId == -1 {
+		keychainBonus = 1.1 // if the user stakes a keychain (any amount of keychains), bonus is 1.1
+	} else if len(keychainIds) == 0 && superiorKeychainId != -1 {
 		keychainBonus = 1.5 // if the user stakes a superior keychain, bonus is 1.5
 	}
 
