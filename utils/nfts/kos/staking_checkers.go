@@ -333,25 +333,25 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 	if keysLength == 15 {
 		return true, nil // return true
 	} else if keysLength == 5 {
-		if pentupleCombo >= 5 {
+		if pentupleCombo >= 2 {
 			return false, nil // return false
 		} else {
 			return true, nil // return true
 		}
 	} else if keysLength == 3 {
-		if trioCombo >= 3 {
+		if trioCombo >= 2 {
 			return false, nil // return false
 		} else {
 			return true, nil // return true
 		}
 	} else if keysLength == 2 {
-		if duoCombo >= 3 {
+		if duoCombo >= 2 {
 			return false, nil // return false
 		} else {
 			return true, nil // return true
 		}
 	} else if keysLength == 1 {
-		if singleCombo >= 3 {
+		if singleCombo >= 2 {
 			return false, nil // return false
 		} else {
 			return true, nil // return true
