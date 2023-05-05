@@ -47,7 +47,7 @@ func KOSRoutes(app *fiber.App) {
 		// get the staking pool id, subpool id, key ids, keychain id and superior keychain id from the query params
 		stakingPoolId := c.Query("stakingPoolId")
 		keyIds := c.Query("keyIds")
-		keychainId := c.Query("keychainId")
+		keychainIds := c.Query("keychainIds")
 		superiorKeychainId := c.Query("superiorKeychainId")
 
 		keyIdsStr := strings.Split(keyIds, ",")
@@ -72,13 +72,18 @@ func KOSRoutes(app *fiber.App) {
 				Data:    nil,
 			})
 		}
-		keychainIdInt, err := strconv.Atoi(keychainId)
-		if err != nil {
-			return c.JSON(&responses.Response{
-				Status:  fiber.StatusBadRequest,
-				Message: "unable to successfully convert given keychainId to int.",
-				Data:    nil,
-			})
+		keychainIdsStr := strings.Split(keychainIds, ",")
+		keychainIdsInt := make([]int, len(keychainIdsStr))
+		for i, keychainId := range keychainIdsStr {
+			keychainIdInt, err := strconv.Atoi(keychainId)
+			if err != nil {
+				return c.JSON(&responses.Response{
+					Status:  fiber.StatusBadRequest,
+					Message: "unable to successfully convert given keychainId to int.",
+					Data:    nil,
+				})
+			}
+			keychainIdsInt[i] = keychainIdInt
 		}
 		superiorKeychainIdInt, err := strconv.Atoi(superiorKeychainId)
 		if err != nil {
@@ -89,7 +94,7 @@ func KOSRoutes(app *fiber.App) {
 			})
 		}
 
-		res, err := ApiKOS.FetchTokenPreAddSubpoolData(stakingPoolIdInt, keyIdsInt, keychainIdInt, superiorKeychainIdInt)
+		res, err := ApiKOS.FetchTokenPreAddSubpoolData(stakingPoolIdInt, keyIdsInt, keychainIdsInt, superiorKeychainIdInt)
 		if err != nil {
 			return c.JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
@@ -487,7 +492,10 @@ func KOSRoutes(app *fiber.App) {
 	// CalculateSubpoolPoints route
 	app.Get("/kos/calculate-subpool-points", func(c *fiber.Ctx) error {
 		// get the keyIds param from the request query params
-		keyIdsParam := ("keyIds")
+		keyIdsParam := c.Query("keyIds")
+		keychainIdsParam := c.Query("keychainIds")
+		// get the superior keychain id param from the request query params
+		superiorKeychainIdParam := c.Query("superiorKeychainId")
 
 		// convert the keyIds param to an array of ints
 		keyIdsStr := strings.Split(keyIdsParam, ",")
@@ -505,18 +513,20 @@ func KOSRoutes(app *fiber.App) {
 			keyIds[i] = idInt
 		}
 
-		// get the keychainId and superiorKeychainId params from the request query params
-		keychainIdParam := c.Query("keychainId")
-		superiorKeychainIdParam := c.Query("superiorKeychainId")
+		// convert the keychainIDs param to an array of ints
+		keychainIdsStr := strings.Split(keychainIdsParam, ",")
+		keychainIds := make([]int, len(keychainIdsStr))
+		for i, id := range keychainIdsStr {
+			idInt, err := strconv.Atoi(id)
+			if err != nil {
+				return c.JSON(&responses.Response{
+					Status:  fiber.StatusBadRequest,
+					Message: fmt.Sprintf("unable to successfully convert given keychainId to int: %v", err),
+					Data:    nil,
+				})
+			}
 
-		// convert the keychainId and superiorKeychainId params to ints
-		keychainId, err := strconv.Atoi(keychainIdParam)
-		if err != nil {
-			return c.JSON(&responses.Response{
-				Status:  fiber.StatusBadRequest,
-				Message: fmt.Sprintf("unable to successfully convert given keychainId to int: %v", err),
-				Data:    nil,
-			})
+			keychainIds[i] = idInt
 		}
 
 		superiorKeychainId, err := strconv.Atoi(superiorKeychainIdParam)
@@ -529,7 +539,7 @@ func KOSRoutes(app *fiber.App) {
 		}
 
 		// call the CalculateSubpoolPoints function
-		points := ApiKOS.CalculateSubpoolPoints(keyIds, keychainId, superiorKeychainId)
+		points := ApiKOS.CalculateSubpoolPoints(keyIds, keychainIds, superiorKeychainId)
 
 		return c.JSON(&responses.Response{
 			Status:  fiber.StatusOK,
@@ -739,7 +749,7 @@ func KOSRoutes(app *fiber.App) {
 			KeyIds             []int  `json:"keyIds"`
 			StakerWallet       string `json:"stakerWallet"`
 			StakingPoolId      int    `json:"stakingPoolId"`
-			KeychainId         int    `json:"keychainId"`
+			KeychainIds        []int  `json:"keychainIds"`
 			SuperiorKeychainId int    `json:"superiorKeychainId"`
 		}
 
@@ -757,7 +767,7 @@ func KOSRoutes(app *fiber.App) {
 		fmt.Printf("addSubpoolRequest: %+v\n", addSubpoolRequest)
 
 		// call the AddSubpool fn
-		err = ApiKOS.AddSubpool(addSubpoolRequest.KeyIds, addSubpoolRequest.StakerWallet, addSubpoolRequest.StakingPoolId, addSubpoolRequest.KeychainId, addSubpoolRequest.SuperiorKeychainId)
+		err = ApiKOS.AddSubpool(addSubpoolRequest.KeyIds, addSubpoolRequest.StakerWallet, addSubpoolRequest.StakingPoolId, addSubpoolRequest.KeychainIds, addSubpoolRequest.SuperiorKeychainId)
 		if err != nil {
 			return c.JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,

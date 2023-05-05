@@ -194,11 +194,11 @@ func FetchStakingPoolData() (*models.AllStakingPools, error) {
 
 func FetchTokenPreAddSubpoolData(
 	stakingPoolId int,
-	keyIds []int,
-	keychainId,
+	keyIds,
+	keychainIds []int,
 	superiorKeychainId int,
 ) (*models.DetailedTokenSubpoolPreAddCalc, error) {
-	return UtilsKOS.GetTokenPreAddSubpoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, keyIds, keychainId, superiorKeychainId)
+	return UtilsKOS.GetTokenPreAddSubpoolData(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, keyIds, keychainIds, superiorKeychainId)
 }
 
 /*
@@ -218,7 +218,7 @@ func FetchSubpoolData(stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, 
 		EnterTime:              subpool.EnterTime,
 		ExitTime:               subpool.ExitTime,
 		StakedKeys:             subpool.StakedKeys,
-		StakedKeychain:         subpool.StakedKeychain,
+		StakedKeychains:        subpool.StakedKeychains,
 		StakedSuperiorKeychain: subpool.StakedSuperiorKeychain,
 		SubpoolPoints:          subpool.SubpoolPoints,
 		RewardClaimable:        subpool.RewardClaimable,
@@ -263,10 +263,10 @@ func CheckSubpoolComboEligibility(stakingPoolId, keyCount int, stakerWallet stri
 	return UtilsKOS.CheckSubpoolComboEligibilityAlt(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet, keyCount)
 }
 
-func CalculateSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) float64 {
+func CalculateSubpoolPoints(keyIds, keychainIds []int, superiorKeychainId int) float64 {
 	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
 
-	return UtilsKOS.CalculateSubpoolPoints(metadatas, keychainId, superiorKeychainId)
+	return UtilsKOS.CalculateSubpoolPoints(metadatas, keychainIds, superiorKeychainId)
 }
 
 func BacktrackSubpoolPoints(stakingPoolId, subpoolId int) (*struct {
@@ -299,10 +299,10 @@ func CheckIfKeysStaked(stakingPoolId int, keyIds []int) (bool, error) {
 	return UtilsKOS.CheckIfKeysStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, metadatas)
 }
 
-func AddSubpool(keyIds []int, stakerWallet string, stakingPoolId, keychainId, superiorKeychainId int) error {
+func AddSubpool(keyIds []int, stakerWallet string, stakingPoolId int, keychainIds []int, superiorKeychainId int) error {
 	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
 
-	return UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet, metadatas, keychainId, superiorKeychainId)
+	return UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet, metadatas, keychainIds, superiorKeychainId)
 }
 
 func AddStakingPool(rewardName string, rewardAmount float64) error {
@@ -348,7 +348,7 @@ func GetAllStakedSuperiorKeychainIDs(stakingPoolId int) ([]int, error) {
 /*
 Gets the detailed subpool points (how it was calculated)
 */
-func DetailedSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) *models.DetailedSubpoolPoints {
+func DetailedSubpoolPoints(keyIds, keychainIds []int, superiorKeychainId int) *models.DetailedSubpoolPoints {
 	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
 
 	var luckAndLuckBoostSum float64
@@ -357,13 +357,13 @@ func DetailedSubpoolPoints(keyIds []int, keychainId, superiorKeychainId int) *mo
 	}
 
 	keyCombo := UtilsKOS.CalculateKeyCombo(metadatas)
-	keychainCombo := UtilsKOS.CalculateKeychainCombo(keychainId, superiorKeychainId)
+	keychainCombo := UtilsKOS.CalculateKeychainCombo(keychainIds, superiorKeychainId)
 
 	return &models.DetailedSubpoolPoints{
 		LuckAndLuckBoostSum: luckAndLuckBoostSum,
 		KeyCombo:            keyCombo,
 		KeychainCombo:       keychainCombo,
-		ComboSum:            CalculateSubpoolPoints(keyIds, keychainId, superiorKeychainId),
+		ComboSum:            CalculateSubpoolPoints(keyIds, keychainIds, superiorKeychainId),
 	}
 }
 
