@@ -368,15 +368,13 @@ func GetStakerInstance(collection *mongo.Collection, wallet string) (*primitive.
 	err := collection.FindOne(context.Background(), filter).Decode(&staker)
 
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil // return nil if no documents are found
+		}
 		return nil, err
 	}
 
-	if staker.ID == primitive.NilObjectID {
-		fmt.Println("staker ID is nil")
-		return nil, nil
-	} else {
-		return &staker.ID, nil
-	}
+	return &staker.ID, nil
 }
 
 /*
