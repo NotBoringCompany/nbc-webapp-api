@@ -377,8 +377,12 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 		return false, err
 	}
 
+	log.Printf("staking pool: %v", stakingPool)
+
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
+	log.Printf("stakerObjId: %v", stakerObjId)
+
 	if err != nil {
 		return false, err
 	}
@@ -410,6 +414,8 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 			pentupleCombo++
 		}
 	}
+
+	log.Printf("singleCombo: %v, dualCombo: %v, trioCombo: %v, pentupleCombo: %v", singleCombo, duoCombo, trioCombo, pentupleCombo)
 
 	if keyCount == 15 {
 		return true, nil // return true
