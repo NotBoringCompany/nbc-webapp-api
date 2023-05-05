@@ -414,25 +414,25 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 	if keyCount == 15 {
 		return true, nil // return true
 	} else if keyCount == 5 {
-		if pentupleCombo >= 5 {
+		if pentupleCombo >= 2 {
 			return false, nil // return false
 		} else {
 			return true, nil // return true
 		}
 	} else if keyCount == 3 {
-		if trioCombo >= 3 {
+		if trioCombo >= 2 {
 			return false, nil // return false
 		} else {
 			return true, nil // return true
 		}
 	} else if keyCount == 2 {
-		if duoCombo >= 3 {
+		if duoCombo >= 2 {
 			return false, nil // return false
 		} else {
 			return true, nil // return true
 		}
 	} else if keyCount == 1 {
-		if singleCombo >= 3 {
+		if singleCombo >= 2 {
 			return false, nil // return false
 		} else {
 			return true, nil // return true
