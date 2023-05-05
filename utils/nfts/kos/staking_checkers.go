@@ -286,18 +286,12 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 		return false, errors.New("invalid collection name") // defaults to false if an error occurs
 	}
 
-	filter := bson.M{"stakingPoolID": stakingPoolId}
-	var stakingPool models.StakingPool
-	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
-	if err != nil {
-		return false, err
-	}
-
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
 	if err != nil {
 		return false, err
 	}
+	log.Printf("staker object ID: %v", stakerObjId)
 	// if staker object doesn't exist, we create a new staker instance.
 	if stakerObjId == nil {
 		newStaker := &models.Staker{
@@ -311,6 +305,13 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 
 		log.Printf("staker not found while checking combo. created new staker instance: %v", newStaker)
 		stakerObjId = addStaker.InsertedID.(*primitive.ObjectID)
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	var stakingPool models.StakingPool
+	err = collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return false, err
 	}
 
 	var stakersSubpools []*models.StakingSubpool
@@ -384,13 +385,6 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 		return false, errors.New("invalid collection name") // defaults to false if an error occurs
 	}
 
-	filter := bson.M{"stakingPoolID": stakingPoolId}
-	var stakingPool models.StakingPool
-	err := collection.FindOne(context.Background(), filter).Decode(&stakingPool)
-	if err != nil {
-		return false, err
-	}
-
 	// fetch the staker's object ID
 	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
 	if err != nil {
@@ -409,6 +403,13 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 
 		log.Printf("staker not found while checking combo. created new staker instance: %v", newStaker)
 		stakerObjId = addStaker.InsertedID.(*primitive.ObjectID)
+	}
+
+	filter := bson.M{"stakingPoolID": stakingPoolId}
+	var stakingPool models.StakingPool
+	err = collection.FindOne(context.Background(), filter).Decode(&stakingPool)
+	if err != nil {
+		return false, err
 	}
 
 	var stakersSubpools []*models.StakingSubpool
