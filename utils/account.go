@@ -33,10 +33,6 @@ func CheckWalletMatchFromSessionToken(sessionToken, walletToCheck string) (bool,
 		return false, fmt.Errorf("unable to fetch wallet address from session token: %s", responseBody.Message)
 	}
 
-	fmt.Println("wallet address from session token:", responseBody.Data.WalletAddress)
-	fmt.Println("wallet to check:", walletToCheck)
-	fmt.Println("wallet address from session token (lowercase):", strings.ToLower(responseBody.Data.WalletAddress))
-
 	walletAddress := responseBody.Data.WalletAddress
 	// check if the wallet address matches the staker's wallet address.
 	if walletAddress != strings.ToLower(walletToCheck) {
