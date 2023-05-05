@@ -483,11 +483,20 @@ Calculates the keychain bonus for a subpool.
 */
 func CalculateKeychainCombo(keychainIds []int, superiorKeychainId int) float64 {
 	var keychainBonus float64 = 1
+	// if there is only 1 `keychainId` and superiorKeychainId == -1, check if the `keychainId` is -1
 	if len(keychainIds) >= 1 && superiorKeychainId == -1 {
-		keychainBonus = 1.1 // if the user stakes a keychain (any amount of keychains), bonus is 1.1
-	} else if len(keychainIds) == 0 && superiorKeychainId != -1 {
-		keychainBonus = 1.5 // if the user stakes a superior keychain, bonus is 1.5
+		if keychainIds[0] == -1 {
+			return keychainBonus // return 1. -1 means no keychain is being staked.
+		}
+
+		return 1.1 // otherwise, return 1.1 if 1 or more keychains is/are not -1.
 	}
 
+	// if there is only 1 `keychainId` and superiorKeychainId != -1
+	if len(keychainIds) == 1 && superiorKeychainId != -1 {
+		if keychainIds[0] == -1 {
+			return 1.5
+		}
+	}
 	return keychainBonus
 }

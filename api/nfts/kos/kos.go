@@ -299,22 +299,22 @@ func CheckIfKeysStaked(stakingPoolId int, keyIds []int) (bool, error) {
 	return UtilsKOS.CheckIfKeysStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, metadatas)
 }
 
-func AddSubpool(keyIds []int, stakerWallet string, stakingPoolId int, keychainIds []int, superiorKeychainId int) error {
+func AddSubpool(keyIds []int, sessionToken, stakerWallet string, stakingPoolId int, keychainIds []int, superiorKeychainId int) error {
 	metadatas := UtilsKOS.GetMetadataFromIDs(keyIds)
 
-	return UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet, metadatas, keychainIds, superiorKeychainId)
+	return UtilsKOS.AddSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), sessionToken, stakingPoolId, stakerWallet, metadatas, keychainIds, superiorKeychainId)
 }
 
 func AddStakingPool(rewardName string, rewardAmount float64) error {
 	return UtilsKOS.AddStakingPool(configs.GetCollections(configs.DB, "RHStakingPool"), rewardName, rewardAmount)
 }
 
-func ClaimReward(stakerWallet string, stakingPoolId, subpoolId int) error {
-	return UtilsKOS.ClaimReward(configs.GetCollections(configs.DB, "RHStakingPool"), stakerWallet, stakingPoolId, subpoolId)
+func ClaimReward(sessionToken, stakerWallet string, stakingPoolId, subpoolId int) error {
+	return UtilsKOS.ClaimReward(configs.GetCollections(configs.DB, "RHStakingPool"), sessionToken, stakerWallet, stakingPoolId, subpoolId)
 }
 
-func UnstakeFromSubpool(stakingPoolId, subpoolId int) error {
-	return UtilsKOS.UnstakeFromSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, subpoolId)
+func UnstakeFromSubpool(sessionToken, wallet string, stakingPoolId, subpoolId int) error {
+	return UtilsKOS.UnstakeFromSubpool(configs.GetCollections(configs.DB, "RHStakingPool"), sessionToken, wallet, stakingPoolId, subpoolId)
 }
 
 func UnstakeFromStakingPool(stakingPoolId int, stakerWallet string) error {

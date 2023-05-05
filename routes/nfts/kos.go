@@ -717,6 +717,9 @@ func KOSRoutes(app *fiber.App) {
 			SubpoolID     int    `json:"subpoolId"`
 		}
 
+		// get the session token from the request header
+		sessionToken := c.Get("session-token")
+
 		// get the request body
 		var claimRewardRequest ClaimRewardRequest
 		if err := c.BodyParser(&claimRewardRequest); err != nil {
@@ -728,7 +731,7 @@ func KOSRoutes(app *fiber.App) {
 		}
 
 		// call the ClaimReward function
-		err := ApiKOS.ClaimReward(claimRewardRequest.Wallet, claimRewardRequest.StakingPoolID, claimRewardRequest.SubpoolID)
+		err := ApiKOS.ClaimReward(sessionToken, claimRewardRequest.Wallet, claimRewardRequest.StakingPoolID, claimRewardRequest.SubpoolID)
 		if err != nil {
 			return c.JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
@@ -753,6 +756,9 @@ func KOSRoutes(app *fiber.App) {
 			SuperiorKeychainId int    `json:"superiorKeychainId"`
 		}
 
+		// get the session token from the request header
+		sessionToken := c.Get("session-token")
+
 		// parse the req body into the AddSubpoolRequest struct
 		var addSubpoolRequest AddSubpoolRequest
 		err := c.BodyParser(&addSubpoolRequest)
@@ -767,7 +773,7 @@ func KOSRoutes(app *fiber.App) {
 		fmt.Printf("addSubpoolRequest: %+v\n", addSubpoolRequest)
 
 		// call the AddSubpool fn
-		err = ApiKOS.AddSubpool(addSubpoolRequest.KeyIds, addSubpoolRequest.StakerWallet, addSubpoolRequest.StakingPoolId, addSubpoolRequest.KeychainIds, addSubpoolRequest.SuperiorKeychainId)
+		err = ApiKOS.AddSubpool(addSubpoolRequest.KeyIds, sessionToken, addSubpoolRequest.StakerWallet, addSubpoolRequest.StakingPoolId, addSubpoolRequest.KeychainIds, addSubpoolRequest.SuperiorKeychainId)
 		if err != nil {
 			return c.JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
@@ -831,9 +837,13 @@ func KOSRoutes(app *fiber.App) {
 	// UnstakeFromSubpool route
 	app.Post("/kos/unstake-from-subpool", func(c *fiber.Ctx) error {
 		type UnstakeFromSubpoolRequest struct {
-			StakingPoolID int `json:"stakingPoolId"`
-			SubpoolID     int `json:"subpoolId"`
+			StakingPoolID int    `json:"stakingPoolId"`
+			SubpoolID     int    `json:"subpoolId"`
+			Wallet        string `json:"wallet"`
 		}
+
+		// get the session token from the request header
+		sessionToken := c.Get("session-token")
 
 		// parse the req body into the UnstakeFromSubpoolRequest struct
 		var unstakeFromSubpoolRequest UnstakeFromSubpoolRequest
@@ -849,7 +859,7 @@ func KOSRoutes(app *fiber.App) {
 		fmt.Printf("unstakeFromSubpoolRequest: %+v\n", unstakeFromSubpoolRequest)
 
 		// call the UnstakeFromSubpool fn
-		err = ApiKOS.UnstakeFromSubpool(unstakeFromSubpoolRequest.StakingPoolID, unstakeFromSubpoolRequest.SubpoolID)
+		err = ApiKOS.UnstakeFromSubpool(sessionToken, unstakeFromSubpoolRequest.Wallet, unstakeFromSubpoolRequest.StakingPoolID, unstakeFromSubpoolRequest.SubpoolID)
 		if err != nil {
 			return c.JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,

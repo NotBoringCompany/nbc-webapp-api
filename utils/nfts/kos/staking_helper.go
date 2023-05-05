@@ -60,11 +60,19 @@ func AddStaker(collection *mongo.Collection, wallet string) (*primitive.ObjectID
 
 /*
 Allows the staker to claim subpool `subpoolId`'s reward from staking pool `stakingPoolId`.
-Checks if the `wallet` given matches the staker's wallet.
 */
-func ClaimReward(collection *mongo.Collection, wallet string, stakingPoolId, subpoolId int) error {
+func ClaimReward(collection *mongo.Collection, sessionToken, wallet string, stakingPoolId, subpoolId int) error {
 	if collection.Name() != "RHStakingPool" {
 		return errors.New("collection must be RHStakingPool")
+	}
+
+	// check for session token authorization
+	authorized, err := utils.CheckWalletMatchFromSessionToken(sessionToken, wallet)
+	if err != nil {
+		return err
+	}
+	if !authorized {
+		return errors.New("wallet from session token does not match wallet given")
 	}
 
 	filter := bson.M{"stakingPoolID": stakingPoolId}
@@ -448,9 +456,18 @@ This assumes that the subpool is part of the `ActiveSubpools`. Closed subpools c
 
 Unstaking only is allowed if the time now has NOT passed the `startTime` of the staking pool yet.
 */
-func UnstakeFromSubpool(collection *mongo.Collection, stakingPoolId, subpoolId int) error {
+func UnstakeFromSubpool(collection *mongo.Collection, sessionToken string, wallet string, stakingPoolId, subpoolId int) error {
 	if collection.Name() != "RHStakingPool" {
 		return errors.New("collection must be RHStakingPool")
+	}
+
+	// check session token authorization
+	authorized, err := utils.CheckWalletMatchFromSessionToken(sessionToken, wallet)
+	if err != nil {
+		return err
+	}
+	if !authorized {
+		return errors.New("session token does not match wallet given")
 	}
 
 	// check if now is past the startTime of the staking pool
@@ -1286,6 +1303,7 @@ Adds a subpool to a staking pool. Called when a user stakes their keys (and keyc
 Every time a user stakes, it counts as a new subpool. If a user has 10 keys and stakes 5 and 5, then there are 2 subpools, each with 5 keys staked.
 
 	`collection` the collection to add the subpool to (must be RHStakingPool)
+	`sessionToken` the session token of the user staking, to confirm authorization of adding the subpool.
 	`stakingPoolId` the main staking pool ID (to add the subpool instance into)
 	`stakerWallet` the staker's wallet to check against `RHStakerData`
 	`keys` the key IDs staked
@@ -1294,6 +1312,7 @@ Every time a user stakes, it counts as a new subpool. If a user has 10 keys and 
 */
 func AddSubpool(
 	collection *mongo.Collection,
+	sessionToken string,
 	stakingPoolId int,
 	stakerWallet string,
 	keys []*models.KOSSimplifiedMetadata,
@@ -1303,6 +1322,15 @@ func AddSubpool(
 	// collection must be RHStakingPool.
 	if collection.Name() != "RHStakingPool" {
 		return errors.New("collection must be RHStakingPool")
+	}
+
+	// check for session token authorization.
+	authorized, err := utils.CheckWalletMatchFromSessionToken(sessionToken, stakerWallet)
+	if err != nil {
+		return err
+	}
+	if !authorized {
+		return errors.New("session token does not match staker wallet")
 	}
 
 	// check if time is within stake time allowance.
