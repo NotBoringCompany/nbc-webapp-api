@@ -498,5 +498,11 @@ func CalculateKeychainCombo(keychainIds []int, superiorKeychainId int) float64 {
 			return 1.5
 		}
 	}
+
+	// in case `keychainIds` is empty, check if `superiorKeychainId` is -1
+	if len(keychainIds) == 0 || keychainIds == nil && superiorKeychainId != -1 {
+		return 1.5
+	}
+
 	return keychainBonus
 }
