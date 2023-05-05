@@ -411,6 +411,7 @@ func CheckSubpoolComboEligibilityAlt(collection *mongo.Collection, stakingPoolId
 
 	filter := bson.M{"stakingPoolID": stakingPoolId}
 	var stakingPool models.StakingPool
+	log.Printf("staking pool object ID: %v", stakingPool.ID.Hex())
 	err = collection.FindOne(context.Background(), filter).Decode(&stakingPool)
 	if err != nil {
 		return false, err
