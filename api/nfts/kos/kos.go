@@ -211,10 +211,17 @@ func FetchSubpoolData(stakingPoolId, subpoolId int) (*models.StakingSubpoolAlt, 
 		return nil, err
 	}
 
+	// get the staker wallet from the obj ID
+	staker, err := UtilsKOS.GetStakerFromObjID(configs.GetCollections(configs.DB, "RHStakingPool"), subpool.Staker)
+	if err != nil {
+		return nil, err
+	}
+
 	// return the subpool data in the format we want
 	return &models.StakingSubpoolAlt{
 		SubpoolID:              subpool.SubpoolID,
 		Staker:                 subpool.Staker,
+		StakerWallet:           staker.Wallet,
 		EnterTime:              subpool.EnterTime,
 		ExitTime:               subpool.ExitTime,
 		StakedKeys:             subpool.StakedKeys,

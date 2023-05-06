@@ -471,6 +471,9 @@ func UnstakeFromSubpool(collection *mongo.Collection, sessionToken string, walle
 	}
 
 	/// check if `wallet` is the owner of the subpool.
+	// although anyone can input any `wallet`, the session token authorization will check if, firstly, the wallet matches the session token's wallet.
+	// if it does, then we already assume here that wallet is verified.
+	// then, we just need to check if the wallet is the owner of the subpool.
 	subpoolData, err := GetSubpoolData(collection, stakingPoolId, subpoolId)
 	if err != nil {
 		return err

@@ -36,6 +36,7 @@ Defines the `StakingSubpool` collection which is used to store all staking subpo
 type StakingSubpool struct {
 	SubpoolID                int                      `bson:"subpoolID,omitempty"`                // unique ID for each staking subpool (starts at 1 for the first staking subpool IN EACH POOL, increments everytime)
 	Staker                   *primitive.ObjectID      `bson:"staker,omitempty"`                   // the staker that owns this subpool (points to a staker instance from the `Staker` collection)
+	StakerWallet             string                   `bson:"stakerWallet,omitempty"`             // the staker's wallet address
 	EnterTime                time.Time                `bson:"enterTime,omitempty"`                // the time when the staker enters the pool with this subpool
 	ExitTime                 time.Time                `bson:"exitTime,omitempty"`                 // the time when the staker exits the pool with this subpool
 	StakedKeys               []*KOSSimplifiedMetadata `bson:"stakedKeys,omitempty"`               // the keys of salvation staked in this subpool
@@ -53,6 +54,7 @@ An alternate version of the `StakingSubpool` struct which is used for API reques
 type StakingSubpoolAlt struct {
 	SubpoolID              int                 `json:"subpoolID,omitempty"`              // unique ID for each staking subpool (starts at 1 for the first staking subpool IN EACH POOL, increments everytime)
 	Staker                 *primitive.ObjectID `json:"staker,omitempty"`                 // the staker that owns this subpool (points to a staker instance from the `Staker` collection)
+	StakerWallet           string              `json:"stakerWallet,omitempty"`           // the staker's wallet address
 	EnterTime              int64               `json:"enterTime,omitempty"`              // the time when the staker enters the pool with this subpool (in unix time)
 	ExitTime               int64               `json:"exitTime,omitempty"`               // the time when the staker exits the pool with this subpool (in unix time)
 	StakedKeys             []*NFTData          `json:"stakedKeys,omitempty"`             // the keys of salvation staked in this subpool
