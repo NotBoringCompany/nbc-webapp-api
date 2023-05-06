@@ -470,6 +470,20 @@ func UnstakeFromSubpool(collection *mongo.Collection, sessionToken string, walle
 		return errors.New("session token does not match wallet given")
 	}
 
+	/// check if `wallet` is the owner of the subpool.
+	subpoolData, err := GetSubpoolData(collection, stakingPoolId, subpoolId)
+	if err != nil {
+		return err
+	}
+	// get the object ID from `wallet`.
+	stakerObjId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), wallet)
+	if err != nil {
+		return err
+	}
+	if subpoolData.Staker.Hex() != stakerObjId.Hex() {
+		return errors.New("wallet specified is not the owner of the subpool")
+	}
+
 	// check if now is past the startTime of the staking pool
 	startTime, err := GetStartTimeOfStakingPool(collection, stakingPoolId)
 	if err != nil {
