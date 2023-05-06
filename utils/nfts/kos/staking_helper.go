@@ -1089,6 +1089,9 @@ func GetStakerSubpools(collection *mongo.Collection, stakerWallet string) ([]*mo
 	if err != nil {
 		return nil, err
 	}
+	if stakerObjId == nil {
+		return nil, nil // if staker doesn't exist, return nil
+	}
 
 	// retrieve all staking pools
 	cursor, err := collection.Find(context.Background(), bson.D{})
