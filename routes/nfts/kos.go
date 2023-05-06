@@ -19,7 +19,7 @@ func KOSRoutes(app *fiber.App) {
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -28,7 +28,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.StakerInventory(wallet, stakingPoolIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch staker inventory for given wallet: %v", err),
 				Data:    nil,
@@ -66,7 +66,7 @@ func KOSRoutes(app *fiber.App) {
 
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -87,7 +87,7 @@ func KOSRoutes(app *fiber.App) {
 		}
 		superiorKeychainIdInt, err := strconv.Atoi(superiorKeychainId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given superiorKeychainId to int.",
 				Data:    nil,
@@ -96,7 +96,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.FetchTokenPreAddSubpoolData(stakingPoolIdInt, keyIdsInt, keychainIdsInt, superiorKeychainIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch token pre add subpool data: %v", err),
 				Data:    nil,
@@ -115,7 +115,7 @@ func KOSRoutes(app *fiber.App) {
 		subpoolId := c.Params("subpoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -123,7 +123,7 @@ func KOSRoutes(app *fiber.App) {
 		}
 		subpoolIdInt, err := strconv.Atoi(subpoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given subpoolId to int.",
 				Data:    nil,
@@ -132,7 +132,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.BacktrackSubpoolPoints(stakingPoolIdInt, subpoolIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully backtrack subpool points: %v", err),
 				Data:    nil,
@@ -152,7 +152,7 @@ func KOSRoutes(app *fiber.App) {
 		subpoolId := c.Params("subpoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -160,7 +160,7 @@ func KOSRoutes(app *fiber.App) {
 		}
 		subpoolIdInt, err := strconv.Atoi(subpoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given subpoolId to int.",
 				Data:    nil,
@@ -169,7 +169,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.FetchSubpoolData(stakingPoolIdInt, subpoolIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch subpool data for given stakingPoolId and subpoolId: %v", err),
 				Data:    nil,
@@ -187,7 +187,7 @@ func KOSRoutes(app *fiber.App) {
 		tokenId := c.Params("tokenId")
 		tokenIdInt, err := strconv.Atoi(tokenId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given tokenId to int.",
 				Data:    nil,
@@ -196,7 +196,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.FetchSimplifiedMetadata(tokenIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch simplified metadata for given tokenId: %v", err),
 				Data:    nil,
@@ -216,7 +216,7 @@ func KOSRoutes(app *fiber.App) {
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -225,7 +225,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.CalculateStakerTotalSubpoolPoints(stakingPoolIdInt, wallet)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully calculate staker total subpool points for given wallet: %v", err),
 				Data:    nil,
@@ -245,7 +245,7 @@ func KOSRoutes(app *fiber.App) {
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -254,7 +254,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.CalcTotalTokenShare(stakingPoolIdInt, wallet)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully calculate total token share for given wallet: %v", err),
 				Data:    nil,
@@ -273,7 +273,7 @@ func KOSRoutes(app *fiber.App) {
 		subpoolId := c.Params("subpoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -281,7 +281,7 @@ func KOSRoutes(app *fiber.App) {
 		}
 		subpoolIdInt, err := strconv.Atoi(subpoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given subpoolId to int.",
 				Data:    nil,
@@ -290,7 +290,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.CalculateSubpoolTokenShare(stakingPoolIdInt, subpoolIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully calculate subpool token share for given stakingPoolId and subpoolId: %v", err),
 				Data:    nil,
@@ -311,7 +311,7 @@ func KOSRoutes(app *fiber.App) {
 		keyCount := c.Params("keyCount")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -319,7 +319,7 @@ func KOSRoutes(app *fiber.App) {
 		}
 		keyCountInt, err := strconv.Atoi(keyCount)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given keyCount to int.",
 				Data:    nil,
@@ -328,7 +328,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.CheckSubpoolComboEligibility(stakingPoolIdInt, keyCountInt, stakerWallet)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully check subpool combo eligibility for given stakerWallet, stakingPoolId, and keyCount: %v", err),
 				Data:    nil,
@@ -347,7 +347,7 @@ func KOSRoutes(app *fiber.App) {
 		id := c.Params("stakingPoolId")
 		idInt, err := strconv.Atoi(id)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -356,7 +356,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.GetStakingPoolData(idInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch staking pool data for given stakingPoolId: %v", err),
 				Data:    nil,
@@ -374,7 +374,7 @@ func KOSRoutes(app *fiber.App) {
 	app.Get("/kos/fetch-staking-pools", func(c *fiber.Ctx) error {
 		res, err := ApiKOS.FetchStakingPoolData()
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch staking pool data: %v", err),
 				Data:    nil,
@@ -393,7 +393,7 @@ func KOSRoutes(app *fiber.App) {
 		tokenId := c.Params("tokenId")
 		tokenIdInt, err := strconv.Atoi(tokenId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given tokenId to int.",
 				Data:    nil,
@@ -402,7 +402,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.FetchMetadata(tokenIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch metadata for given tokenId: %v", err),
 				Data:    nil,
@@ -421,7 +421,7 @@ func KOSRoutes(app *fiber.App) {
 		address := c.Params("address")
 		res, err := ApiKOS.OwnerIDs(address)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch ownerIds for given address: %v", err),
 				Data:    nil,
@@ -439,7 +439,7 @@ func KOSRoutes(app *fiber.App) {
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -448,7 +448,7 @@ func KOSRoutes(app *fiber.App) {
 
 		res, err := ApiKOS.GetAllStakedKeyIDs(stakingPoolIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch all staked key ids for given stakingPoolId: %v", err),
 				Data:    nil,
@@ -467,7 +467,7 @@ func KOSRoutes(app *fiber.App) {
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: "unable to successfully convert given stakingPoolId to int.",
 				Data:    nil,
@@ -475,7 +475,7 @@ func KOSRoutes(app *fiber.App) {
 		}
 		res, err := ApiKOS.GetTotalTokenReward(stakingPoolIdInt)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch total token reward for given stakingPoolId: %v", err),
 				Data:    nil,
@@ -531,7 +531,7 @@ func KOSRoutes(app *fiber.App) {
 
 		superiorKeychainId, err := strconv.Atoi(superiorKeychainIdParam)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully convert given superiorKeychainId to int: %v", err),
 				Data:    nil,
@@ -552,7 +552,7 @@ func KOSRoutes(app *fiber.App) {
 		wallet := c.Params("wallet")
 		res, err := ApiKOS.GetStakerSubpools(wallet)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully fetch staker subpools for given wallet: %v", err),
 				Data:    nil,
@@ -574,7 +574,7 @@ func KOSRoutes(app *fiber.App) {
 		// convert the stakingPoolId and subpoolId params to ints
 		stakingPoolId, err := strconv.Atoi(stakingPoolIdParam)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully convert given stakingPoolId to int: %v", err),
 				Data:    nil,
@@ -583,7 +583,7 @@ func KOSRoutes(app *fiber.App) {
 
 		subpoolId, err := strconv.Atoi(subpoolIdParam)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully convert given subpoolId to int: %v", err),
 				Data:    nil,
@@ -593,7 +593,7 @@ func KOSRoutes(app *fiber.App) {
 		// call the CalculateSubpoolTokenShare function
 		tokenShare, err := ApiKOS.CalculateSubpoolTokenShare(stakingPoolId, subpoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully calculate subpool token share: %v", err),
 				Data:    nil,
@@ -614,7 +614,7 @@ func KOSRoutes(app *fiber.App) {
 		// call the CheckIfStakerBanned function
 		banned, err := ApiKOS.CheckIfStakerBanned(addressParam)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully check if staker banned: %v", err),
 				Data:    nil,
@@ -635,7 +635,7 @@ func KOSRoutes(app *fiber.App) {
 		// convert the stakingPoolId param to an int
 		stakingPoolId, err := strconv.Atoi(stakingPoolIdParam)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully convert given stakingPoolId to int: %v", err),
 				Data:    nil,
@@ -645,7 +645,7 @@ func KOSRoutes(app *fiber.App) {
 		// call the CheckPoolTimeAllowanceExceeded function
 		exceeded, err := ApiKOS.CheckPoolTimeAllowanceExceeded(stakingPoolId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully check if pool time allowance exceeded: %v", err),
 				Data:    nil,
@@ -685,7 +685,7 @@ func KOSRoutes(app *fiber.App) {
 		// convert the stakingPoolId param to an int
 		stakingPoolId, err := strconv.Atoi(stakingPoolIdParam)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully convert given stakingPoolId to int: %v", err),
 				Data:    nil,
@@ -695,7 +695,7 @@ func KOSRoutes(app *fiber.App) {
 		// call the CheckIfKeysStaked function
 		keysStaked, err := ApiKOS.CheckIfKeysStaked(stakingPoolId, keyIds)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully check if keys staked: %v", err),
 				Data:    nil,
@@ -733,7 +733,7 @@ func KOSRoutes(app *fiber.App) {
 		// call the ClaimReward function
 		err := ApiKOS.ClaimReward(sessionToken, claimRewardRequest.Wallet, claimRewardRequest.StakingPoolID, claimRewardRequest.SubpoolID)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully claim reward: %v", err),
 				Data:    nil,
@@ -763,7 +763,7 @@ func KOSRoutes(app *fiber.App) {
 		var addSubpoolRequest AddSubpoolRequest
 		err := c.BodyParser(&addSubpoolRequest)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully parse request body: %v", err),
 				Data:    nil,
@@ -775,7 +775,7 @@ func KOSRoutes(app *fiber.App) {
 		// call the AddSubpool fn
 		err = ApiKOS.AddSubpool(addSubpoolRequest.KeyIds, sessionToken, addSubpoolRequest.StakerWallet, addSubpoolRequest.StakingPoolId, addSubpoolRequest.KeychainIds, addSubpoolRequest.SuperiorKeychainId)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully add subpool: %v", err),
 				Data:    nil,
@@ -801,7 +801,7 @@ func KOSRoutes(app *fiber.App) {
 		var addStakingPoolRequest AddStakingPoolRequest
 		err := c.BodyParser(&addStakingPoolRequest)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully parse request body: %v", err),
 				Data:    nil,
@@ -820,7 +820,7 @@ func KOSRoutes(app *fiber.App) {
 		// call the AddStakingPool fn
 		err = ApiKOS.AddStakingPool(addStakingPoolRequest.RewardName, addStakingPoolRequest.RewardAmount)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully add staking pool: %v", err),
 				Data:    nil,
@@ -849,7 +849,7 @@ func KOSRoutes(app *fiber.App) {
 		var unstakeFromSubpoolRequest UnstakeFromSubpoolRequest
 		err := c.BodyParser(&unstakeFromSubpoolRequest)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully parse request body: %v", err),
 				Data:    nil,
@@ -861,7 +861,7 @@ func KOSRoutes(app *fiber.App) {
 		// call the UnstakeFromSubpool fn
 		err = ApiKOS.UnstakeFromSubpool(sessionToken, unstakeFromSubpoolRequest.Wallet, unstakeFromSubpoolRequest.StakingPoolID, unstakeFromSubpoolRequest.SubpoolID)
 		if err != nil {
-			return c.JSON(&responses.Response{
+			return c.Status(400).JSON(&responses.Response{
 				Status:  fiber.StatusBadRequest,
 				Message: fmt.Sprintf("unable to successfully unstake from subpool: %v", err),
 				Data:    nil,

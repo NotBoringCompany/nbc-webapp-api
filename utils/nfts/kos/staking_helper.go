@@ -1362,7 +1362,7 @@ func AddSubpool(
 		return err
 	}
 	if !ownership {
-		return errors.New("one or more keys specified do not belong to the wallet specified.")
+		return errors.New("one or more keys specified do not belong to the wallet specified")
 	}
 
 	// check if any of the keys in `keys` are already staked.
