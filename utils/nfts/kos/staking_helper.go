@@ -125,6 +125,12 @@ func ClaimReward(collection *mongo.Collection, sessionToken, wallet string, stak
 		return errors.New("reward has already been claimed")
 	}
 
+	// get the staker's wallet
+	staker, err := GetStakerFromObjID(configs.GetCollections(configs.DB, "RHStakerData"), stakerId)
+	if err != nil {
+		return err
+	}
+
 	// otherwise, we assume that any closed subpools that are NOT banned and doesn't have its reward claimed can have the rewards claimed.
 	// reason: a subpool can only be `closed` if 1. the staking period has ended, or 2. the subpool has been banned.
 	// we can now calculate the reward to be given to the staker.
@@ -135,7 +141,7 @@ func ClaimReward(collection *mongo.Collection, sessionToken, wallet string, stak
 			return err
 		}
 		// we now add the tokens to the staker's wallet.
-		err = AddTokensToStaker(configs.GetCollections(configs.DB, "RHStakerData"), stakingPool.Reward.Name, wallet, tokensToGive)
+		err = AddTokensToStaker(configs.GetCollections(configs.DB, "RHStakerData"), stakingPool.Reward.Name, staker.Wallet, tokensToGive)
 		if err != nil {
 			return err
 		}
