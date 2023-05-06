@@ -1351,6 +1351,20 @@ func AddSubpool(
 		return errors.New("staker is temporarily banned from staking")
 	}
 
+	// check if the key(s) are owned by the `stakerWallet`. technically, we're supposed to check against the wallet owned by `sessionToken`.
+	// however, since it first checks if the wallet matches the `stakerWallet`, it's safe to assume that the `sessionToken` is owned by the `stakerWallet` at this point of the code.
+	var keyIds []int
+	for _, key := range keys {
+		keyIds = append(keyIds, key.TokenID)
+	}
+	ownership, err := VerifyOwnership(stakerWallet, keyIds)
+	if err != nil {
+		return err
+	}
+	if !ownership {
+		return errors.New("one or more keys specified do not belong to the wallet specified.")
+	}
+
 	// check if any of the keys in `keys` are already staked.
 	// if even just one of them are, return an error.
 	checkKeysStaked, err := CheckIfKeysStaked(collection, stakingPoolId, keys)
