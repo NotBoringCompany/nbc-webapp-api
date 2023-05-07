@@ -523,6 +523,9 @@ func CheckIfKeyStaked(collection *mongo.Collection, stakingPoolId int, key *mode
 	if err != nil {
 		return true, err
 	}
+	if err == mongo.ErrNoDocuments {
+		return true, nil // automatically return true
+	}
 
 	// check if the key ID is in the list of staked key IDs
 	for _, stakedKeyID := range stakedKeyIDs {
