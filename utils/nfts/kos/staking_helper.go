@@ -582,6 +582,10 @@ func GetStakingPoolData(collection *mongo.Collection, stakingPoolId int) (*model
 	if err != nil {
 		return nil, err
 	}
+	// if no document is found, then return nil but no error
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
 
 	return &stakingPool, nil
 }
@@ -1239,7 +1243,6 @@ func GetAllStakedKeychainIDs(collection *mongo.Collection, stakingPoolId int) ([
 		}
 	}
 
-	fmt.Println("staked keychain IDs: ", stakedKeychainIDs)
 	return stakedKeychainIDs, nil
 }
 
