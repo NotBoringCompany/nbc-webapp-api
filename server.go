@@ -23,12 +23,7 @@ func main() {
 	app := fiber.New()
 
 	// Allow requests from webapp.nbcompany.io
-	corsConfig := cors.Config{
-		AllowOrigins: "https://webapp.nbcompany.io",
-		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders: "Origin,X-Requested-With,Content-Type,Accept",
-	}
-	app.Use(cors.New(corsConfig))
+	app.Use(cors.New(configs.CorsConfig()))
 
 	// runs the ConnectMongo function
 	configs.ConnectMongo()

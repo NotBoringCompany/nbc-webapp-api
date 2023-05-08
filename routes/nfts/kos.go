@@ -3,6 +3,7 @@ package routes_nfts
 import (
 	"fmt"
 	ApiKOS "nbc-backend-api-v2/api/nfts/kos"
+	"nbc-backend-api-v2/configs"
 	"os"
 	"strconv"
 	"strings"
@@ -10,11 +11,12 @@ import (
 	"nbc-backend-api-v2/responses"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func KOSRoutes(app *fiber.App) {
 	// FetchStakerInventory route
-	app.Get("/kos/fetch-staker-inventory/:wallet/:stakingPoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/fetch-staker-inventory/:wallet/:stakingPoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		wallet := c.Params("wallet")
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
@@ -43,7 +45,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// FetchTokenPreAddSubpoolData route
-	app.Get("/kos/fetch-token-pre-add-subpool-data/", func(c *fiber.Ctx) error {
+	app.Get("/kos/fetch-token-pre-add-subpool-data/", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		// get the staking pool id, subpool id, key ids, keychain id and superior keychain id from the query params
 		stakingPoolId := c.Query("stakingPoolId")
 		keyIds := c.Query("keyIds")
@@ -110,7 +112,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/backtrack-subpool-points/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/backtrack-subpool-points/:stakingPoolId/:subpoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")
 		subpoolId := c.Params("subpoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
@@ -147,7 +149,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// FetchSubpoolData route
-	app.Get("/kos/fetch-subpool-data/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/fetch-subpool-data/:stakingPoolId/:subpoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")
 		subpoolId := c.Params("subpoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
@@ -183,7 +185,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/fetch-simplified-metadata/:tokenId", func(c *fiber.Ctx) error {
+	app.Get("/kos/fetch-simplified-metadata/:tokenId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		tokenId := c.Params("tokenId")
 		tokenIdInt, err := strconv.Atoi(tokenId)
 		if err != nil {
@@ -211,7 +213,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// CalculateStakerTotalSubpoolPoints route
-	app.Get("/kos/staker-total-subpool-points/:wallet/:stakingPoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/staker-total-subpool-points/:wallet/:stakingPoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		wallet := c.Params("wallet")
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
@@ -240,7 +242,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// CalculateTotalTokenShare route
-	app.Get("/kos/calculate-total-token-share/:wallet/:stakingPoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/calculate-total-token-share/:wallet/:stakingPoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		wallet := c.Params("wallet")
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
@@ -268,7 +270,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/calculate-subpool-token-share/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/calculate-subpool-token-share/:stakingPoolId/:subpoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")
 		subpoolId := c.Params("subpoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
@@ -305,7 +307,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// CheckSubpoolComboEligibility route
-	app.Get("/kos/check-subpool-combo-eligiblity/:stakerWallet/:stakingPoolId/:keyCount", func(c *fiber.Ctx) error {
+	app.Get("/kos/check-subpool-combo-eligiblity/:stakerWallet/:stakingPoolId/:keyCount", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		stakerWallet := c.Params("stakerWallet")
 		stakingPoolId := c.Params("stakingPoolId")
 		keyCount := c.Params("keyCount")
@@ -343,7 +345,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// GetStakingPoolData route
-	app.Get("/kos/staking-pool-data/:stakingPoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/staking-pool-data/:stakingPoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		id := c.Params("stakingPoolId")
 		idInt, err := strconv.Atoi(id)
 		if err != nil {
@@ -371,7 +373,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// FetchStakingPoolData route
-	app.Get("/kos/fetch-staking-pools", func(c *fiber.Ctx) error {
+	app.Get("/kos/fetch-staking-pools", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		res, err := ApiKOS.FetchStakingPoolData()
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&responses.Response{
@@ -389,7 +391,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// FetchMetadata route
-	app.Get("/kos/fetch-metadata/:tokenId", func(c *fiber.Ctx) error {
+	app.Get("/kos/fetch-metadata/:tokenId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		tokenId := c.Params("tokenId")
 		tokenIdInt, err := strconv.Atoi(tokenId)
 		if err != nil {
@@ -417,7 +419,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// OwnerIDs route
-	app.Get("/kos/owner-ids/:address", func(c *fiber.Ctx) error {
+	app.Get("/kos/owner-ids/:address", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		address := c.Params("address")
 		res, err := ApiKOS.OwnerIDs(address)
 		if err != nil {
@@ -435,7 +437,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/get-all-staked-key-ids/:stakingPoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/get-all-staked-key-ids/:stakingPoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
@@ -463,7 +465,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// TotalTokenReward route
-	app.Get("/kos/total-token-reward/:stakingPoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/total-token-reward/:stakingPoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")
 		stakingPoolIdInt, err := strconv.Atoi(stakingPoolId)
 		if err != nil {
@@ -490,7 +492,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// CalculateSubpoolPoints route
-	app.Get("/kos/calculate-subpool-points", func(c *fiber.Ctx) error {
+	app.Get("/kos/calculate-subpool-points", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		// get the keyIds param from the request query params
 		keyIdsParam := c.Query("keyIds")
 		keychainIdsParam := c.Query("keychainIds")
@@ -548,7 +550,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/get-staker-subpools/:wallet", func(c *fiber.Ctx) error {
+	app.Get("/kos/get-staker-subpools/:wallet", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		wallet := c.Params("wallet")
 		res, err := ApiKOS.GetStakerSubpools(wallet)
 		if err != nil {
@@ -566,7 +568,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/calculate-subpool-token-share/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/calculate-subpool-token-share/:stakingPoolId/:subpoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		// get the stakingPoolId and subpoolId params from the request query params
 		stakingPoolIdParam := c.Params("stakingPoolId")
 		subpoolIdParam := c.Params("subpoolId")
@@ -607,7 +609,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/check-if-staker-banned/:address", func(c *fiber.Ctx) error {
+	app.Get("/kos/check-if-staker-banned/:address", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		// get the address param from the request query params
 		addressParam := c.Params("address")
 
@@ -628,7 +630,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/check-pool-time-allowance-exceeded/:stakingPoolId", func(c *fiber.Ctx) error {
+	app.Get("/kos/check-pool-time-allowance-exceeded/:stakingPoolId", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		// get the stakingPoolId param from the request query params
 		stakingPoolIdParam := c.Params("stakingPoolId")
 
@@ -659,7 +661,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Get("/kos/check-if-keys-staked", func(c *fiber.Ctx) error {
+	app.Get("/kos/check-if-keys-staked", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		// get the keyIds param from the request query params
 		keyIdsParam := c.Query("keyIds")
 
@@ -710,7 +712,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// ClaimReward route
-	app.Post("/kos/claim-reward", func(c *fiber.Ctx) error {
+	app.Post("/kos/claim-reward", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		type ClaimRewardRequest struct {
 			Wallet        string `json:"wallet"`
 			StakingPoolID int    `json:"stakingPoolId"`
@@ -747,7 +749,7 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Post("/kos/add-subpool", func(c *fiber.Ctx) error {
+	app.Post("/kos/add-subpool", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		type AddSubpoolRequest struct {
 			KeyIds             []int  `json:"keyIds"`
 			StakerWallet       string `json:"stakerWallet"`
@@ -790,7 +792,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// calls the add staking pool function BUT with a password
-	app.Post("/kos/add-staking-pool", func(c *fiber.Ctx) error {
+	app.Post("/kos/add-staking-pool", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		type AddStakingPoolRequest struct {
 			RewardAmount float64 `json:"rewardAmount"`
 			RewardName   string  `json:"rewardName"`
@@ -835,7 +837,7 @@ func KOSRoutes(app *fiber.App) {
 	})
 
 	// UnstakeFromSubpool route
-	app.Post("/kos/unstake-from-subpool", func(c *fiber.Ctx) error {
+	app.Post("/kos/unstake-from-subpool", cors.New(configs.CorsConfig()), func(c *fiber.Ctx) error {
 		type UnstakeFromSubpoolRequest struct {
 			StakingPoolID int    `json:"stakingPoolId"`
 			SubpoolID     int    `json:"subpoolId"`
