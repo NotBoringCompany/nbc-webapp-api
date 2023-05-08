@@ -9,6 +9,6 @@ func CorsConfig() cors.Config {
 	return cors.Config{
 		AllowOrigins: "https://webapp.nbcompany.io",
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders: "Origin,X-Requested-With,Content-Type,Accept",
+		AllowHeaders: "Origin,X-Requested-With,Content-Type,Accept,session-token",
 	}
 }
