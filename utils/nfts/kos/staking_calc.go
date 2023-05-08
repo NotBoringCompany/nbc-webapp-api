@@ -230,15 +230,18 @@ func CalcTotalTokenShare(collection *mongo.Collection, stakingPoolId int, staker
 
 	// find all active subpools belonging to the staker
 	var subpools []*models.StakingSubpool
-	for _, subpool := range stakingPool.ActiveSubpools {
-		if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
-			subpools = append(subpools, subpool)
+	if stakingPool.ActiveSubpools != nil || len(stakingPool.ActiveSubpools) > 0 {
+		for _, subpool := range stakingPool.ActiveSubpools {
+			if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
+				subpools = append(subpools, subpool)
+			}
 		}
 	}
-
-	for _, subpool := range stakingPool.ClosedSubpools {
-		if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
-			subpools = append(subpools, subpool)
+	if stakingPool.ClosedSubpools != nil || len(stakingPool.ClosedSubpools) > 0 {
+		for _, subpool := range stakingPool.ClosedSubpools {
+			if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
+				subpools = append(subpools, subpool)
+			}
 		}
 	}
 
