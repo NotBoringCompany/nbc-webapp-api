@@ -304,10 +304,6 @@ func CheckSubpoolComboEligibility(collection *mongo.Collection, stakingPoolId in
 	if err != nil {
 		return false, err
 	}
-	if stakerObjId == nil {
-		return false, nil // return false if staker object doesn't exist
-	}
-
 	// if staker object doesn't exist, we create a new staker instance.
 	if stakerObjId == nil {
 		newStaker := &models.Staker{

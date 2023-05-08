@@ -3,6 +3,7 @@ package utils_kos
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"nbc-backend-api-v2/configs"
@@ -11,6 +12,7 @@ import (
 	"sync"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -227,17 +229,31 @@ func CalcTotalTokenShare(collection *mongo.Collection, stakingPoolId int, staker
 	if err != nil {
 		return 0, err
 	}
+	if stakerObjectId == nil {
+		newStaker := &models.Staker{
+			Wallet: stakerWallet,
+		}
+
+		addStaker, err := configs.GetCollections(configs.DB, "RHStakerData").InsertOne(context.Background(), newStaker)
+		if err != nil {
+			return 0, err
+		}
+
+		stakerObjId_ := addStaker.InsertedID.(primitive.ObjectID)
+		stakerObjectId = &stakerObjId_
+		fmt.Println("staker not found calculating token share. adding new staker: ", newStaker)
+	}
 
 	// find all active subpools belonging to the staker
 	var subpools []*models.StakingSubpool
-	if stakingPool.ActiveSubpools != nil || len(stakingPool.ActiveSubpools) > 0 {
+	if stakingPool.ActiveSubpools != nil && len(stakingPool.ActiveSubpools) > 0 {
 		for _, subpool := range stakingPool.ActiveSubpools {
 			if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
 				subpools = append(subpools, subpool)
 			}
 		}
 	}
-	if stakingPool.ClosedSubpools != nil || len(stakingPool.ClosedSubpools) > 0 {
+	if stakingPool.ClosedSubpools != nil && len(stakingPool.ClosedSubpools) > 0 {
 		for _, subpool := range stakingPool.ClosedSubpools {
 			if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
 				subpools = append(subpools, subpool)
