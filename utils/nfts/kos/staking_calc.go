@@ -306,20 +306,28 @@ func CalculateStakerTotalSubpoolPoints(collection *mongo.Collection, stakingPool
 
 	// find all subpools belonging to the staker
 	var subpools []*models.StakingSubpool
-	for _, subpool := range stakingPool.ActiveSubpools {
-		if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
-			subpools = append(subpools, subpool)
+	if stakingPool.ActiveSubpools != nil && len(stakingPool.ActiveSubpools) > 0 {
+		for _, subpool := range stakingPool.ActiveSubpools {
+			if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
+				subpools = append(subpools, subpool)
+			}
 		}
 	}
 
-	for _, subpool := range stakingPool.ClosedSubpools {
-		if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
-			subpools = append(subpools, subpool)
+	if stakingPool.ClosedSubpools != nil && len(stakingPool.ClosedSubpools) > 0 {
+		for _, subpool := range stakingPool.ClosedSubpools {
+			if subpool.Staker != nil && subpool.Staker.Hex() == stakerObjectId.Hex() {
+				subpools = append(subpools, subpool)
+			}
 		}
 	}
 
 	// add up the total subpool points
 	totalSubpoolPoints := 0.0
+	if len(subpools) == 0 {
+		return 0, nil // if the staker has no subpools, return 0
+	}
+
 	for _, subpool := range subpools {
 		totalSubpoolPoints += subpool.SubpoolPoints
 	}
