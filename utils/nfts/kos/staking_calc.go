@@ -247,6 +247,9 @@ func CalcTotalTokenShare(collection *mongo.Collection, stakingPoolId int, staker
 
 	// since closed subpools don't count into the staker's total reward share, we only get from the active subpools.
 	var totalTokenShare float64
+	if len(subpools) == 0 {
+		return 0, nil
+	}
 	for _, subpool := range subpools {
 		rewardShare, err := CalcSubpoolTokenShare(collection, stakingPoolId, subpool.SubpoolID)
 		if err != nil {
