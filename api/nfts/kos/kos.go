@@ -9,6 +9,7 @@ import (
 	UtilsKeychain "nbc-backend-api-v2/utils/nfts/keychain"
 	UtilsKOS "nbc-backend-api-v2/utils/nfts/kos"
 	UtilsSuperiorKeychain "nbc-backend-api-v2/utils/nfts/superior_keychain"
+	"sync"
 
 	"github.com/robfig/cron/v3"
 )
@@ -38,129 +39,279 @@ func StakerInventory(wallet string, stakingPoolId int) (*models.KOSStakerInvento
 		return nil, err
 	}
 
-	totalIDs := len(ownedKeyIds) + len(ownedKeychainIds) + len(ownedSuperiorKeychainIds)
-	allIds := make([]int, 0, totalIDs)
-
-	for _, id := range ownedKeyIds {
-		allIds = append(allIds, int(id.Int64()))
-	}
-	for _, id := range ownedKeychainIds {
-		allIds = append(allIds, int(id.Int64()))
-	}
-	for _, id := range ownedSuperiorKeychainIds {
-		allIds = append(allIds, int(id.Int64()))
+	keyIds := make([]int, len(ownedKeyIds))
+	for i, id := range ownedKeyIds {
+		keyIds[i] = int(id.Int64())
 	}
 
-	// Fetch metadata concurrently
-	allMetadata, err := UtilsKOS.FetchSimplifiedMetadataConcurrent(allIds)
+	keyData, err := UtilsKOS.FetchSimplifiedMetadataConcurrent(keyIds)
 	if err != nil {
 		return nil, err
 	}
 
-	// collect metadata results
-	var keyMetadata []*models.KOSSimplifiedMetadata
-	// both keychain and superior keychain metadata doesn't technically use the `KOSSimplifiedMetadata` struct, but for the sake of simplicity, we'll use it here
-	var keychainMetadata []*models.KOSSimplifiedMetadata
-	var superiorKeychainMetadata []*models.KOSSimplifiedMetadata
+	var keyMetadataAPI, keychainData, superiorKeychainData []*models.NFTData
+	var wg sync.WaitGroup
 
-	containsBigInt := func(s []*big.Int, val *big.Int) bool {
-		for _, v := range s {
-			if v.Cmp(val) == 0 {
-				return true
-			}
-		}
-		return false
-	}
-
-	for _, metadata := range allMetadata {
-		tokenID := metadata.TokenID
-		switch {
-		case containsBigInt(ownedKeyIds, big.NewInt(int64(tokenID))):
-			keyMetadata = append(keyMetadata, metadata)
-		case containsBigInt(ownedKeychainIds, big.NewInt(int64(tokenID))):
-			keychainMetadata = append(keychainMetadata, metadata)
-		case containsBigInt(ownedSuperiorKeychainIds, big.NewInt(int64(tokenID))):
-			superiorKeychainMetadata = append(superiorKeychainMetadata, metadata)
-		}
-	}
-
-	// check if any of the keys, keychains and/or superior keychains are staked in the specified staking pool
-	// Parallelize staking checks
-	keyDataCh := make(chan *models.NFTData, len(keyMetadata))
-	keychainDataCh := make(chan *models.NFTData, len(keychainMetadata))
-	superiorKeychainDataCh := make(chan *models.NFTData, len(superiorKeychainMetadata))
-
-	for _, metadata := range keyMetadata {
+	for _, md := range keyData {
+		wg.Add(1)
 		go func(md *models.KOSSimplifiedMetadata) {
+			defer wg.Done()
 			isStaked, err := UtilsKOS.CheckIfKeyStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md)
 			if err != nil {
 				log.Printf("Error checking if key is staked for token ID %d: %v\n", md.TokenID, err)
-			} else {
-				keyDataCh <- &models.NFTData{
-					Name:      fmt.Sprintf("Key Of Salvation #%d", md.TokenID),
-					ImageUrl:  md.AnimationUrl,
-					TokenID:   md.TokenID,
-					Metadata:  md,
-					Stakeable: !isStaked,
-				}
+				return
 			}
-		}(metadata)
+			keyMetadataAPI = append(keyMetadataAPI, &models.NFTData{
+				Name:      fmt.Sprintf("Key Of Salvation #%d", md.TokenID),
+				ImageUrl:  md.AnimationUrl,
+				TokenID:   md.TokenID,
+				Metadata:  md,
+				Stakeable: !isStaked,
+			})
+		}(md)
 	}
 
-	for _, metadata := range keychainMetadata {
-		go func(md *models.KOSSimplifiedMetadata) {
-			isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md.TokenID)
+	for _, id := range ownedKeychainIds {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, id)
 			if err != nil {
-				log.Printf("Error checking if keychain is staked for token ID %d: %v\n", md.TokenID, err)
-			} else {
-				keychainDataCh <- &models.NFTData{
-					Name:      fmt.Sprintf("Keychain #%d", md.TokenID),
-					ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/keychain.mp4",
-					TokenID:   md.TokenID,
-					Stakeable: !isStaked,
-				}
+				log.Printf("Error checking if keychain is staked for token ID %d: %v\n", id, err)
+				return
 			}
-		}(metadata)
+			keychainData = append(keychainData, &models.NFTData{
+				Name:      fmt.Sprintf("Keychain #%d", id),
+				ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/keychain.mp4",
+				TokenID:   id,
+				Stakeable: !isStaked,
+			})
+		}(int(id.Int64()))
 	}
 
-	for _, metadata := range superiorKeychainMetadata {
-		go func(md *models.KOSSimplifiedMetadata) {
-			isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md.TokenID)
+	for _, id := range ownedSuperiorKeychainIds {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, id)
 			if err != nil {
-				log.Printf("Error checking if superior keychain is staked for token ID %d: %v\n", md.TokenID, err)
-			} else {
-				superiorKeychainDataCh <- &models.NFTData{
-					Name:      fmt.Sprintf("Superior Keychain #%d", md.TokenID),
-					ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/superiorKeychain.mp4",
-					TokenID:   md.TokenID,
-					Stakeable: !isStaked,
-				}
+				log.Printf("Error checking if superior keychain is staked for token ID %d: %v\n", id, err)
+				return
 			}
-		}(metadata)
+			superiorKeychainData = append(superiorKeychainData, &models.NFTData{
+				Name:      fmt.Sprintf("Superior Keychain #%d", id),
+				ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/superiorKeychain.mp4",
+				TokenID:   id,
+				Stakeable: !isStaked,
+			})
+		}(int(id.Int64()))
 	}
 
-	// Collect staking check results
-	keyData := make([]*models.NFTData, 0, len(keyMetadata))
-	keychainData := make([]*models.NFTData, 0, len(keychainMetadata))
-	superiorKeychainData := make([]*models.NFTData, 0, len(superiorKeychainMetadata))
-
-	for i := 0; i < len(keyMetadata); i++ {
-		keyData = append(keyData, <-keyDataCh)
-	}
-
-	for i := 0; i < len(keychainMetadata); i++ {
-		keychainData = append(keychainData, <-keychainDataCh)
-	}
-
-	for i := 0; i < len(superiorKeychainMetadata); i++ {
-		superiorKeychainData = append(superiorKeychainData, <-superiorKeychainDataCh)
-	}
+	wg.Wait()
 
 	return &models.KOSStakerInventory{
-		KeyData:              keyData,
+		KeyData:              keyMetadataAPI,
 		KeychainData:         keychainData,
 		SuperiorKeychainData: superiorKeychainData,
 	}, nil
+	//////////////////// START OF CHANGE //////////////////////////////
+
+	// ownedKeyIds, err := UtilsKOS.OwnerIDs(wallet)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// ownedKeychainIds, err := UtilsKeychain.OwnerIDs(wallet)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// ownedSuperiorKeychainIds, err := UtilsSuperiorKeychain.OwnerIDs(wallet)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// var keyIds []int
+	// // convert big.Int to int
+	// for _, id := range ownedKeyIds {
+	// 	keyIds = append(keyIds, int(id.Int64()))
+	// }
+
+	// // fetch the metadata for each owned key, keychain and superior keychain
+	// keyData, err := UtilsKOS.FetchSimplifiedMetadataConcurrent(keyIds)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// var keychainData []*models.NFTData
+	// var superiorKeychainData []*models.NFTData
+	// // we need to convert the key data above into NFTData to be read by the API.
+	// var keyMetadataAPI []*models.NFTData
+
+	// for _, md := range keyData {
+	// 	isStaked, err := UtilsKOS.CheckIfKeyStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md)
+	// 	if err != nil {
+	// 		log.Printf("Error checking if key is staked for token ID %d: %v\n", md.TokenID, err)
+	// 	}
+	// 	keyMetadataAPI = append(keyMetadataAPI, &models.NFTData{
+	// Name:      fmt.Sprintf("Key Of Salvation #%d", md.TokenID),
+	// ImageUrl:  md.AnimationUrl,
+	// TokenID:   md.TokenID,
+	// Metadata:  md,
+	// Stakeable: !isStaked,
+	// 	})
+	// }
+
+	// for _, id := range ownedKeychainIds {
+	// 	var idInt int = int(id.Int64())
+	// 	isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, idInt)
+	// 	if err != nil {
+	// 		log.Printf("Error checking if keychain is staked for token ID %d: %v\n", id, err)
+	// 	}
+	// 	keychainData = append(keychainData, &models.NFTData{
+	// 		Name:      fmt.Sprintf("Keychain #%d", idInt),
+	// ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/keychain.mp4",
+	// TokenID:   idInt,
+	// Stakeable: !isStaked,
+	// 	})
+	// }
+
+	// for _, id := range ownedSuperiorKeychainIds {
+	// 	var idInt int = int(id.Int64())
+	// 	isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, idInt)
+	// 	if err != nil {
+	// 		log.Printf("Error checking if superior keychain is staked for token ID %d: %v\n", id, err)
+	// 	}
+	// 	superiorKeychainData = append(superiorKeychainData, &models.NFTData{
+	// Name:      fmt.Sprintf("Superior Keychain #%d", idInt),
+	// ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/superiorKeychain.mp4",
+	// TokenID:   idInt,
+	// Stakeable: !isStaked,
+	// 	})
+	// }
+
+	// return &models.KOSStakerInventory{
+	// 	KeyData:              keyMetadataAPI,
+	// 	KeychainData:         keychainData,
+	// 	SuperiorKeychainData: superiorKeychainData,
+	// }, nil
+
+	////////////////////// END OF CHANGE /////////////////////////////
+
+	// totalIDs := len(ownedKeyIds) + len(ownedKeychainIds) + len(ownedSuperiorKeychainIds)
+	// allIds := make([]int, 0, totalIDs)
+
+	// for _, id := range ownedKeyIds {
+	// 	allIds = append(allIds, int(id.Int64()))
+	// }
+	// for _, id := range ownedKeychainIds {
+	// 	allIds = append(allIds, int(id.Int64()))
+	// }
+	// for _, id := range ownedSuperiorKeychainIds {
+	// 	allIds = append(allIds, int(id.Int64()))
+	// }
+
+	// // Fetch metadata concurrently
+	// allMetadata, err := UtilsKOS.FetchSimplifiedMetadataConcurrent(allIds)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// // collect metadata results
+	// var keyMetadata []*models.KOSSimplifiedMetadata
+	// // both keychain and superior keychain metadata doesn't technically use the `KOSSimplifiedMetadata` struct, but for the sake of simplicity, we'll use it here
+	// var keychainMetadata []*models.KOSSimplifiedMetadata
+	// var superiorKeychainMetadata []*models.KOSSimplifiedMetadata
+
+	// containsBigInt := func(s []*big.Int, val *big.Int) bool {
+	// 	for _, v := range s {
+	// 		if v.Cmp(val) == 0 {
+	// 			return true
+	// 		}
+	// 	}
+	// 	return false
+	// }
+
+	// for _, metadata := range allMetadata {
+	// 	tokenID := metadata.TokenID
+	// 	switch {
+	// 	case containsBigInt(ownedKeyIds, big.NewInt(int64(tokenID))):
+	// 		keyMetadata = append(keyMetadata, metadata)
+	// 	case containsBigInt(ownedKeychainIds, big.NewInt(int64(tokenID))):
+	// 		keychainMetadata = append(keychainMetadata, metadata)
+	// 	case containsBigInt(ownedSuperiorKeychainIds, big.NewInt(int64(tokenID))):
+	// 		superiorKeychainMetadata = append(superiorKeychainMetadata, metadata)
+	// 	}
+	// }
+
+	// check if any of the keys, keychains and/or superior keychains are staked in the specified staking pool
+	// Parallelize staking checks
+	// keyDataCh := make(chan *models.NFTData, len(keyMetadata))
+	// keychainDataCh := make(chan *models.NFTData, len(keychainMetadata))
+	// superiorKeychainDataCh := make(chan *models.NFTData, len(superiorKeychainMetadata))
+
+	// for _, metadata := range keyMetadata {
+	// 	go func(md *models.KOSSimplifiedMetadata) {
+	// 		isStaked, err := UtilsKOS.CheckIfKeyStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md)
+	// 		if err != nil {
+	// 			log.Printf("Error checking if key is staked for token ID %d: %v\n", md.TokenID, err)
+	// 		} else {
+	// 			keyDataCh <- &models.NFTData{
+	// 				Name:      fmt.Sprintf("Key Of Salvation #%d", md.TokenID),
+	// 				ImageUrl:  md.AnimationUrl,
+	// 				TokenID:   md.TokenID,
+	// 				Metadata:  md,
+	// 				Stakeable: !isStaked,
+	// 			}
+	// 		}
+	// 	}(metadata)
+	// }
+
+	// for _, metadata := range keychainMetadata {
+	// 	go func(md *models.KOSSimplifiedMetadata) {
+	// 		isStaked, err := UtilsKOS.CheckIfKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md.TokenID)
+	// 		if err != nil {
+	// 			log.Printf("Error checking if keychain is staked for token ID %d: %v\n", md.TokenID, err)
+	// 		} else {
+	// 			keychainDataCh <- &models.NFTData{
+	// 				Name:      fmt.Sprintf("Keychain #%d", md.TokenID),
+	// 				ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/keychain.mp4",
+	// 				TokenID:   md.TokenID,
+	// 				Stakeable: !isStaked,
+	// 			}
+	// 		}
+	// 	}(metadata)
+	// }
+
+	// for _, metadata := range superiorKeychainMetadata {
+	// 	go func(md *models.KOSSimplifiedMetadata) {
+	// 		isStaked, err := UtilsKOS.CheckIfSuperiorKeychainStaked(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, md.TokenID)
+	// 		if err != nil {
+	// 			log.Printf("Error checking if superior keychain is staked for token ID %d: %v\n", md.TokenID, err)
+	// 		} else {
+	// 			superiorKeychainDataCh <- &models.NFTData{
+	// 				Name:      fmt.Sprintf("Superior Keychain #%d", md.TokenID),
+	// 				ImageUrl:  "https://realmhunter-kos.fra1.digitaloceanspaces.com/keychains/superiorKeychain.mp4",
+	// 				TokenID:   md.TokenID,
+	// 				Stakeable: !isStaked,
+	// 			}
+	// 		}
+	// 	}(metadata)
+	// }
+
+	// // Collect staking check results
+	// keyData := make([]*models.NFTData, 0, len(keyMetadata))
+	// keychainData := make([]*models.NFTData, 0, len(keychainMetadata))
+	// superiorKeychainData := make([]*models.NFTData, 0, len(superiorKeychainMetadata))
+
+	// for i := 0; i < len(keyMetadata); i++ {
+	// 	keyData = append(keyData, <-keyDataCh)
+	// }
+
+	// for i := 0; i < len(keychainMetadata); i++ {
+	// 	keychainData = append(keychainData, <-keychainDataCh)
+	// }
+
+	// for i := 0; i < len(superiorKeychainMetadata); i++ {
+	// 	superiorKeychainData = append(superiorKeychainData, <-superiorKeychainDataCh)
+	// }
 }
 
 /*
