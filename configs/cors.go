@@ -7,7 +7,7 @@ Returns a cors.Config instance to allow requests from webapp.nbcompany.io
 */
 func CorsConfig() cors.Config {
 	return cors.Config{
-		AllowOrigins: "https://webapp.nbcompany.io",
+		AllowOrigins: "https://webapp.nbcompany.io,http://localhost",
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders: "Origin,X-Requested-With,Content-Type,Accept,session-token",
 	}
