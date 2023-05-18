@@ -359,7 +359,7 @@ func GetStakerRECBalance(collection *mongo.Collection, wallet string) (float64, 
 	}
 
 	var staker models.Staker
-	filter := bson.M{"wallet": wallet}
+	filter := bson.M{"wallet": strings.ToLower(wallet)}
 	err := collection.FindOne(context.Background(), filter).Decode(&staker)
 	if err == mongo.ErrNoDocuments {
 		return 0, nil // returns 0 if staker with `wallet` does not exist
