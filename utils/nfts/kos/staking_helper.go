@@ -351,6 +351,33 @@ func AddTokensToStaker(collection *mongo.Collection, rewardName, wallet string, 
 }
 
 /*
+Fetches how many tokens a staker has earned so far.
+*/
+func GetStakerRECBalance(collection *mongo.Collection, wallet string) (float64, error) {
+	if collection.Name() != "RHStakerData" {
+		return 0, errors.New("collection must be RHStakerData")
+	}
+
+	var staker models.Staker
+	filter := bson.M{"wallet": wallet}
+	err := collection.FindOne(context.Background(), filter).Decode(&staker)
+	if err == mongo.ErrNoDocuments {
+		return 0, nil // returns 0 if staker with `wallet` does not exist
+	} else if err != nil {
+		return 0, err
+	}
+
+	for _, reward := range staker.EarnedRewards {
+		// find the one that has "REC Token"
+		if reward.Name == "REC Token" {
+			return reward.Amount, nil
+		}
+	}
+
+	return 0, nil
+}
+
+/*
 Checks if a Staker instance with `wallet` exists in RHStakerData.
 */
 func CheckStakerExists(collection *mongo.Collection, wallet string) (bool, error) {
