@@ -393,6 +393,10 @@ func FetchMetadata(tokenId int) (*models.KOSMetadata, error) {
 	return UtilsKOS.FetchMetadata(tokenId)
 }
 
+func GetStakerRECBalance(wallet string) (float64, error) {
+	return UtilsKOS.GetStakerRECBalance(configs.GetCollections(configs.DB, "RHStakerData"), wallet)
+}
+
 func CalculateStakerTotalSubpoolPoints(stakingPoolId int, stakerWallet string) (float64, error) {
 	return UtilsKOS.CalculateStakerTotalSubpoolPoints(configs.GetCollections(configs.DB, "RHStakingPool"), stakingPoolId, stakerWallet)
 }

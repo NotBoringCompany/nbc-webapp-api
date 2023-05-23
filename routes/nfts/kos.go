@@ -146,6 +146,26 @@ func KOSRoutes(app *fiber.App) {
 		})
 	})
 
+	// FetchStakerRECBalance route
+	app.Get("/kos/fetch-staker-rec-balance/:wallet", func(c *fiber.Ctx) error {
+		wallet := c.Params("wallet")
+
+		res, err := ApiKOS.GetStakerRECBalance(wallet)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(&responses.Response{
+				Status:  fiber.StatusBadRequest,
+				Message: fmt.Sprintf("unable to successfully fetch staker rec balance: %v", err),
+				Data:    nil,
+			})
+		}
+
+		return c.JSON(&responses.Response{
+			Status:  fiber.StatusOK,
+			Message: "successfully fetched staker rec balance.",
+			Data:    &fiber.Map{"stakerRecBalance": res},
+		})
+	})
+
 	// FetchSubpoolData route
 	app.Get("/kos/fetch-subpool-data/:stakingPoolId/:subpoolId", func(c *fiber.Ctx) error {
 		stakingPoolId := c.Params("stakingPoolId")
