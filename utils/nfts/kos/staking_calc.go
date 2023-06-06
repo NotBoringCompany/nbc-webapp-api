@@ -317,12 +317,18 @@ func CalculateStakerTotalSubpoolPoints(collection *mongo.Collection, stakingPool
 	filter := bson.M{"stakingPoolID": stakingPoolId}
 	var stakingPool *models.StakingPool
 	if err := collection.FindOne(context.Background(), filter).Decode(&stakingPool); err != nil {
-		return 0, err
+		if err == mongo.ErrNoDocuments {
+			return 0, nil // staking pool not found
+		} else if err != nil {
+			return 0, err
+		}
 	}
 
 	// get the staker's object ID
 	stakerObjectId, err := GetStakerInstance(configs.GetCollections(configs.DB, "RHStakerData"), stakerWallet)
-	if err != nil {
+	if err == mongo.ErrNoDocuments {
+		return 0, nil // staker not found
+	} else if err != nil {
 		return 0, err
 	}
 

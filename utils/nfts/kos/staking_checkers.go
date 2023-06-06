@@ -516,11 +516,10 @@ Checks if a key that a user wants to add to a subpool has already been staked in
 func CheckIfKeyStaked(collection *mongo.Collection, stakingPoolId int, key *models.KOSSimplifiedMetadata) (bool, error) {
 	// call `GetAllStakedKeyIDs` to get all the key IDs that have been staked in the staking pool
 	stakedKeyIDs, err := GetAllStakedKeyIDs(collection, stakingPoolId)
-	if err != nil {
-		return true, err
-	}
 	if err == mongo.ErrNoDocuments {
 		return true, nil // automatically return true
+	} else if err != nil {
+		return true, err // return true if an error occurs
 	}
 
 	// check if the key ID is in the list of staked key IDs
