@@ -1,7 +1,6 @@
 package main
 
 import (
-	ApiKOS "nbc-backend-api-v2/api/nfts/kos"
 	"nbc-backend-api-v2/configs"
 	RoutesNFTs "nbc-backend-api-v2/routes/nfts"
 	"os"
@@ -31,11 +30,12 @@ func main() {
 	RoutesNFTs.KOSRoutes(app)
 
 	// SCHEDULERS
-	ApiKOS.UpdateTotalYieldPointsScheduler().Start()
-	ApiKOS.CloseSubpoolsOnStakeEndScheduler().Start()
-	ApiKOS.VerifyStakerOwnershipScheduler().Start()
-	ApiKOS.VerifyStakingPoolStakerCountScheduler().Start()
-	ApiKOS.RemoveExpiredUnclaimableSubpoolsScheduler().Start()
+	// TEMPORARILY REMOVED SCHEDULERS DUE TO STAKING END (AUG/SEP)
+	// ApiKOS.UpdateTotalYieldPointsScheduler().Start()
+	// ApiKOS.CloseSubpoolsOnStakeEndScheduler().Start()
+	// ApiKOS.VerifyStakerOwnershipScheduler().Start()
+	// ApiKOS.VerifyStakingPoolStakerCountScheduler().Start()
+	// ApiKOS.RemoveExpiredUnclaimableSubpoolsScheduler().Start()
 
 	app.Listen(":" + port)
 }
